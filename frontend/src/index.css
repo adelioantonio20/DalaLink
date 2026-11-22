@@ -1,0 +1,45 @@
+@import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+@layer base {
+  :root {
+    --brand-emerald: #0d7c5f;
+    --brand-emerald-dark: #095b45;
+    --brand-amber: #d97706;
+    --surface-page: #f4f6f8;
+    --surface-card: #ffffff;
+    --ink-primary: #0f172a;
+    --ink-muted: #475569;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: var(--surface-page);
+    color: var(--ink-primary);
+  }
+
+  h1, h2, h3, h4 {
+    font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+    letter-spacing: -0.02em;
+  }
+
+  .font-mono-code {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+  }
+}
+
+/* Leaflet map refinements */
+.leaflet-container {
+  font-family: 'Inter', sans-serif;
+  z-index: 1;
+}
+
+.dalalink-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
+  border: 2.5px solid #ffffff;
+}
