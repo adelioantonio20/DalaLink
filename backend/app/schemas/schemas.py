@@ -140,3 +140,48 @@ class CorporateBatchDispatchRequest(BaseModel):
     origin_zone: str = "Talatona"
     shift_time: str = "17:00"
     destination_zone: Optional[str] = None
+    max_vehicle_capacity: int = Field(default=12, ge=2, le=50)
+
+
+class EmployeeStatusUpdate(BaseModel):
+    status: str  # INVITED, ACTIVE, SUSPENDED
+
+
+class CreateRecurringBookingRequest(BaseModel):
+    route_id: int
+    days_of_week: str = "SEG,TER,QUA,QUI,SEX"
+    shift_time: str = "17:00"
+    vehicle_capacity_hint: int = Field(default=12, ge=2, le=50)
+
+
+class UpdateSubscriptionRequest(BaseModel):
+    plan_name: str = Field(min_length=3, max_length=80)
+    max_employees: int = Field(ge=5, le=2000)
+    monthly_fee_aoa: Decimal = Field(gt=0)
+    status: str = "ACTIVE"  # ACTIVE, PAUSED
+
+
+class AddRouteStopRequest(BaseModel):
+    name: str = Field(min_length=2, max_length=140)
+    zone_name: str
+    latitude: float
+    longitude: float
+    sequence_order: int = 1
+
+
+# --- Phase 4: NFC, Admin Card Issuance & Fleet Owner ---
+class BindNfcRequest(BaseModel):
+    nfc_uid: str = Field(min_length=4, max_length=64)
+    card_technology: str = "QR+NFC"  # NFC, QR+NFC
+
+
+class IssueCardAdminRequest(BaseModel):
+    passenger_id: int
+    initial_balance_aoa: Decimal = Field(default=Decimal("0.00"), ge=0)
+    nfc_uid: Optional[str] = None
+
+
+class AssignVehicleDriverRequest(BaseModel):
+    driver_id: Optional[int] = None
+    is_active: Optional[bool] = None
+

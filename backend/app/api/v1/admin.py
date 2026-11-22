@@ -1,7 +1,8 @@
+from datetime import datetime
 from decimal import Decimal
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import desc, func, select
 from sqlalchemy.orm import Session
 
@@ -20,18 +21,26 @@ from app.models.fleet import DriverAvailability, Vehicle
 from app.models.identity import Driver, Passenger, User
 from app.models.mobility import AuditLog, TransportRequest, Trip
 from app.schemas.schemas import (
+    BindNfcRequest,
     CardStatusRequest,
     CardTopupRequest,
+    IssueCardAdminRequest,
     RefundRequest,
     VerifyDriverRequest,
 )
 from app.services.audit_service import create_notification, record_audit
 from app.services.card_wallet_service import (
+    bind_nfc_to_card,
+    issue_card_for_passenger,
     refund_transaction,
     set_card_status,
     topup_card_admin,
 )
-from app.services.intelligence_service import compute_zone_demand_pressure
+from app.services.integrations import list_registered_integrations
+from app.services.intelligence_service import (
+    compute_mobility_intelligence,
+    compute_zone_demand_pressure,
+)
 from app.services.matching_service import redistribute_expired_offers
 from app.services.realtime_hub import realtime_hub
 
@@ -327,12 +336,105 @@ def admin_refund_transaction(
     return serialize_transaction(db, tx)
 
 
+@router.put("/cards/{card_code}/nfc")
+def admin_bind_nfc(
+    card_code: str,
+    payload: BindNfcRequest,
+    user: User = Depends(require_roles("ADMIN")),
+    db: Session = Depends(get_db),
+):
+    card = bind_nfc_to_card(
+        db=db,
+        card_code=card_code,
+        nfc_uid=payload.nfc_uid,
+        card_technology=payload.card_technology,
+        actor_user_id=user.id,
+    )
+    db.commit()
+    return serialize_card(db, card)
+
+
+@router.post("/cards/issue", status_code=status.HTTP_201_CREATED)
+def admin_issue_card(
+    payload: IssueCardAdminRequest,
+    user: User = Depends(require_roles("ADMIN")),
+    db: Session = Depends(get_db),
+):
+    passenger = db.get(Passenger, payload.passenger_id)
+    if not passenger:
+        raise HTTPException(status_code=404, detail="Passageiro não encontrado.")
+    card = issue_card_for_passenger(
+        db=db,
+        passenger=passenger,
+        initial_balance_aoa=Decimal(payload.initial_balance_aoa),
+        actor_user_id=user.id,
+    )
+    if payload.nfc_uid:
+        bind_nfc_to_card(
+            db=db,
+            card_code=card.card_code,
+            nfc_uid=payload.nfc_uid,
+            card_technology="QR+NFC",
+            actor_user_id=user.id,
+        )
+    db.commit()
+    return serialize_card(db, card)
+
+
+@router.get("/passengers")
+def list_passengers(
+    user: User = Depends(require_roles("ADMIN")),
+    db: Session = Depends(get_db),
+):
+    rows = db.execute(
+        select(Passenger, User, Wallet)
+        .join(User, User.id == Passenger.user_id)
+        .outerjoin(Wallet, Wallet.passenger_id == Passenger.id)
+        .order_by(Passenger.id)
+    ).all()
+    return [
+        {
+            "id": p.id,
+            "full_name": u.full_name,
+            "email": u.email,
+            "phone": u.phone,
+            "default_zone": p.default_zone,
+            "total_trips": p.total_trips,
+            "balance_aoa": float(w.balance_aoa) if w else 0.0,
+        }
+        for p, u, w in rows
+    ]
+
+
+@router.get("/intelligence")
+def get_mobility_intelligence(
+    zone: Optional[str] = Query(default=None),
+    date_from: Optional[str] = Query(default=None),
+    date_to: Optional[str] = Query(default=None),
+    user: User = Depends(require_roles("ADMIN")),
+    db: Session = Depends(get_db),
+):
+    df = datetime.fromisoformat(date_from) if date_from else None
+    dt = datetime.fromisoformat(date_to) if date_to else None
+    return compute_mobility_intelligence(db, date_from=df, date_to=dt, zone=zone)
+
+
+@router.get("/integrations")
+def get_integrations_registry(
+    user: User = Depends(require_roles("ADMIN")),
+):
+    return {"integrations": list_registered_integrations()}
+
+
 @router.get("/trips")
 def list_filtered_trips(
     status_filter: Optional[str] = Query(default=None),
     zone: Optional[str] = Query(default=None),
     driver_id: Optional[int] = Query(default=None),
+    vehicle_id: Optional[int] = Query(default=None),
     company_id: Optional[int] = Query(default=None),
+    date_from: Optional[str] = Query(default=None),
+    date_to: Optional[str] = Query(default=None),
     user: User = Depends(require_roles("ADMIN")),
     db: Session = Depends(get_db),
 ):
@@ -345,10 +447,19 @@ def list_filtered_trips(
         )
     if driver_id:
         stmt = stmt.where(Trip.driver_id == driver_id)
+    if vehicle_id:
+        stmt = stmt.where(Trip.vehicle_id == vehicle_id)
     if company_id:
         stmt = stmt.where(TransportRequest.company_id == company_id)
 
-    trips = db.scalars(stmt.order_by(desc(Trip.created_at)).limit(60)).all()
+    trips = db.scalars(stmt.order_by(desc(Trip.created_at)).limit(100)).all()
+    if date_from:
+        df = datetime.fromisoformat(date_from).replace(tzinfo=None)
+        trips = [t for t in trips if t.created_at and t.created_at.replace(tzinfo=None) >= df]
+    if date_to:
+        dt = datetime.fromisoformat(date_to).replace(tzinfo=None)
+        trips = [t for t in trips if t.created_at and t.created_at.replace(tzinfo=None) <= dt]
+
     return [serialize_trip(db, t) for t in trips]
 
 

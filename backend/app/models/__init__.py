@@ -1,4 +1,11 @@
-from app.models.corporate import Company, Employee, Route, Stop, Subscription
+from app.models.corporate import (
+    Company,
+    Employee,
+    RecurringCorporateBooking,
+    Route,
+    Stop,
+    Subscription,
+)
 from app.models.finance import CardTransaction, Commission, Tariff, TransportCard, Wallet
 from app.models.fleet import DriverAvailability, Vehicle, VehicleLocation
 from app.models.identity import Driver, Passenger, User, VehicleOwner
@@ -21,6 +28,7 @@ __all__ = [
     "VehicleOwner",
     "Company",
     "Employee",
+    "RecurringCorporateBooking",
     "TransportCard",
     "CardTransaction",
     "Wallet",

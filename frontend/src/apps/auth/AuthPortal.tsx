@@ -40,10 +40,18 @@ const PORTAL_CARDS = [
   {
     title: 'Painel Administrativo',
     subtitle: 'Torre de Controlo Operacional • Luanda',
-    detail: 'KPIs ao vivo, mapa da frota, aprovação de motoristas e cartões QR.',
+    detail: 'KPIs ao vivo, mapa & heatmap de procura, motoristas, cartões QR/NFC e integrações.',
     email: 'admin@dalalink.ao',
     icon: LayoutDashboard,
     accent: 'bg-teal-800',
+  },
+  {
+    title: 'Proprietário & Gestão de Frotas',
+    subtitle: 'Frota DalaLink Luanda • Hyundai i10 + HiAce + Picanto',
+    detail: 'Acompanhe receitas por viatura, localização ao vivo e atribuição de motoristas.',
+    email: 'frota@dalalink.ao',
+    icon: Car,
+    accent: 'bg-emerald-900',
   },
 ];
 

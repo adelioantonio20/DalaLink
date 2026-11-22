@@ -20,6 +20,7 @@ const DEMO_SWITCH_ACCOUNTS = [
   { label: 'Motorista (Hyundai i10)', email: 'motorista@dalalink.ao', icon: Car },
   { label: 'Motorista 2 (HiAce)', email: 'motorista2@dalalink.ao', icon: Car },
   { label: 'Empresa (Atlântico)', email: 'empresa@dalalink.ao', icon: Building2 },
+  { label: 'Proprietário / Frota', email: 'frota@dalalink.ao', icon: Car },
   { label: 'Administração Luanda', email: 'admin@dalalink.ao', icon: LayoutDashboard },
 ];
 

@@ -295,27 +295,46 @@ def seed_database(db: Session) -> None:
             )
         )
 
-    db.add_all(
-        [
-            Route(
-                company_id=company.id,
-                name="Rota Corporativa Sul — Talatona → Gamek → Aeroporto",
-                origin_zone="Talatona",
-                destination_zone="Aeroporto",
-                scheduled_time="17:00",
-                is_corporate=True,
-                notes="Recolha diária de colaboradores do turno das 17h00.",
-            ),
-            Route(
-                company_id=company.id,
-                name="Rota Corporativa Centro — Talatona → Maianga → Mutamba",
-                origin_zone="Talatona",
-                destination_zone="Mutamba",
-                scheduled_time="17:00",
-                is_corporate=True,
-                notes="Ligação empresarial ao centro financeiro de Luanda.",
-            ),
-        ]
+    route_sul = Route(
+        company_id=company.id,
+        name="Rota Corporativa Sul — Talatona → Gamek → Aeroporto",
+        origin_zone="Talatona",
+        destination_zone="Aeroporto",
+        scheduled_time="17:00",
+        is_corporate=True,
+        notes="Recolha diária de colaboradores do turno das 17h00.",
+    )
+    route_centro = Route(
+        company_id=company.id,
+        name="Rota Corporativa Centro — Talatona → Maianga → Mutamba",
+        origin_zone="Talatona",
+        destination_zone="Mutamba",
+        scheduled_time="17:00",
+        is_corporate=True,
+        notes="Ligação empresarial ao centro financeiro de Luanda.",
+    )
+    db.add_all([route_sul, route_centro])
+    db.flush()
+
+    from app.models.corporate import RecurringCorporateBooking
+    from app.services.card_wallet_service import bind_nfc_to_card
+
+    db.add(
+        RecurringCorporateBooking(
+            company_id=company.id,
+            route_id=route_sul.id,
+            days_of_week="SEG,TER,QUA,QUI,SEX",
+            shift_time="17:00",
+            vehicle_capacity_hint=12,
+            is_active=True,
+        )
+    )
+    bind_nfc_to_card(
+        db=db,
+        card_code="MOB-000001",
+        nfc_uid="NFC-AO-000001",
+        card_technology="QR+NFC",
+        actor_user_id=admin_user.id,
     )
 
     db.commit()

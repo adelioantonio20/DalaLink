@@ -2,23 +2,25 @@
 
 Infraestrutura digital de intermediação entre passageiros, taxistas, frotas e empresas em **Luanda, Angola** (`Africa/Luanda`, moeda **Kwanza — AOA**, idioma **Português**).
 
-## Ambientes Implementados (Fase 1 — MVP Funcional)
+## Ambientes e Fases Implementadas (Fases 1 a 4)
 
-1. **Aplicação do Passageiro (`PASSENGER`)** — Mobile-First PWA com mapa interativo de Luanda (OpenStreetMap/Leaflet), seleção de origem/destino, estimativa de tarifa em AOA, modo individual e **viagens em grupo** com validação individual de cartões QR, acompanhamento do veículo em tempo real, código PIN de embarque, cartão pré-pago digital (`MOB-000001`), saldo no servidor, histórico de transações e avaliação da viagem.
-2. **Aplicação do Motorista (`DRIVER`)** — Cockpit de alto contraste desenhado para baixa distração ao volante, com **alertas sonoros e voz em Português**, gestão de estado (`Disponível`, `Ocupado`, `Indisponível`), registo de veículos, aceitação/rejeição de solicitações com redistribuição automática, simulador/partilha GPS, **leitor QR (câmara + validação rápida)** com débito atómico, receitas/comissões e zonas de oportunidade.
-3. **Portal Empresarial (`COMPANY_ADMIN`)** — Gestão da subscrição corporativa, colaboradores, rotas recorrentes e **agrupamento automático de turno (ex.: 17h00)** por destino diretamente para o motor de matching.
-4. **Painel Administrativo (`ADMIN`)** — Torre de Controlo de Luanda com KPIs em tempo real, mapa operacional (frota, pedidos, paragens e círculos de **pressão de procura/oferta**), validação documental de motoristas, gestão de cartões QR (carregamentos administrativos, bloqueio/desbloqueio e reembolsos autorizados), filtros de viagens e **Audit Logs** imutáveis.
+1. **Aplicação do Passageiro (`PASSENGER`)** — Mobile-First PWA com mapa interativo de Luanda (OpenStreetMap/Leaflet), seleção de origem/destino, estimativa de tarifa em AOA, modo individual e **viagens em grupo** com validação individual de cartões QR, acompanhamento do veículo em tempo real, código PIN de embarque, cartão pré-pago digital (`MOB-000001` / `QR+NFC`), saldo no servidor, histórico de transações e avaliação da viagem.
+2. **Aplicação do Motorista (`DRIVER`)** — Cockpit de alto contraste para baixa distração ao volante, com **alertas sonoros e voz em Português**, gestão de estado (`Disponível`, `Ocupado`, `Indisponível`), registo de veículos, aceitação/rejeição de solicitações com redistribuição automática, simulador/partilha GPS, **leitor QR + NFC Tap** com débito atómico, receitas/comissões e zonas de oportunidade.
+3. **Portal Empresarial (`COMPANY_ADMIN` — Fase 2 Completa)** — Gestão de colaboradores e estados, rotas corporativas, **agendamentos recorrentes**, **agrupamento automático por destino e capacidade de viatura (ex.: 17h00)**, mapa ao vivo de viaturas corporativas, relatórios de custos por departamento/corredor e **exportação CSV**.
+4. **Proprietário & Gestão de Frotas (`OWNER` — Fase 4)** — Rentabilidade por viatura (bruto, comissão e líquido), localização em tempo real da frota no mapa de Luanda, registo de novas viaturas e atribuição de motoristas.
+5. **Painel Administrativo (`ADMIN` — Fases 1, 3 e 4)** — Torre de Controlo de Luanda com KPIs em tempo real, mapa operacional, **Inteligência de Mobilidade & Heatmap** (distribuição horária 24h, corredores O→D, congestionamento, espera média, recomendações de reposicionamento e indicador transparente de prontidão ML), validação documental de motoristas, gestão e emissão de cartões **QR/NFC**, filtros avançados por data/zona/estado, registo de adaptadores externos (Bilhética Angola / EMIS desativado até aprovação) e **Audit Logs** imutáveis.
 
 ## Contas de Demonstração (Password: `dalalink123`)
 
 | Ambiente | Email | Detalhes de Teste |
 | :--- | :--- | :--- |
-| Passageiro | `passageiro@dalalink.ao` | Mateus Domingos • Cartão `MOB-000001` (Saldo inicial: **10.000 AOA**) |
+| Passageiro | `passageiro@dalalink.ao` | Mateus Domingos • Cartão `MOB-000001` (`QR+NFC: NFC-AO-000001` • **10.000 AOA**) |
 | Motorista 1 | `motorista@dalalink.ao` | Carlos Eduardo • **Hyundai i10** (`LD-42-18-AB`, 4 lug.) • Gamek |
 | Motorista 2 | `motorista2@dalalink.ao` | Fernando Quiosa • **Toyota HiAce** (`LD-88-90-CD`, 12 lug.) • Maianga |
 | Motorista 3 | `motorista3@dalalink.ao` | Miguel Teixeira • Kia Picanto (`PENDING` — testar aprovação Admin) |
-| Empresa | `empresa@dalalink.ao` | Atlântico Energia & Serviços, Lda. • 5 colaboradores (turno 17:00) |
-| Administração | `admin@dalalink.ao` | Torre de Controlo Operacional Luanda |
+| Empresa | `empresa@dalalink.ao` | Atlântico Energia & Serviços, Lda. • 5 colaboradores, rotas e recorrências (17:00) |
+| Proprietário / Frota | `frota@dalalink.ao` | Frota DalaLink Luanda • Gestão e rentabilidade das 3 viaturas |
+| Administração | `admin@dalalink.ao` | Torre de Controlo Operacional & Inteligência de Mobilidade Luanda |
 
 Cartões adicionais pré-carregados para validação de segurança:
 - `MOB-000002` (Ana Paula Costa — **5.000 AOA**, `ACTIVE`, ideal para testar viagem em grupo)

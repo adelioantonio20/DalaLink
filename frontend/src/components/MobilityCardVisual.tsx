@@ -54,8 +54,9 @@ export const MobilityCardVisual: React.FC<Props> = ({ card, compact = false }) =
               {!isActive && <ShieldAlert className="h-3.5 w-3.5" />}
               {isActive ? 'ATIVO' : card.status}
             </span>
-            <span className="inline-flex items-center gap-1 text-xs text-slate-400">
-              <Wifi className="h-3.5 w-3.5 rotate-90" /> QR • NFC Ready
+            <span className="inline-flex items-center gap-1 text-xs text-slate-300">
+              <Wifi className="h-3.5 w-3.5 rotate-90 text-emerald-400" />
+              {card.nfc_uid ? `${card.card_technology} • ${card.nfc_uid}` : 'QR • NFC Ready'}
             </span>
           </div>
 

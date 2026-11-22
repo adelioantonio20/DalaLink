@@ -15,7 +15,13 @@ from app.services.audit_service import create_notification, record_audit
 
 
 def _resolve_card_by_input(db: Session, card_identifier: str) -> Optional[TransportCard]:
-    """Resolve card from either card_code (MOB-000001) or signed QR token."""
+    """
+    Resolve card from:
+      1. Signed QR token (DALALINK:MOB-XXXXXX:...)
+      2. Physical NFC card UID (NFC:<uid>)
+      3. Card code (MOB-000001)
+    Balance is NEVER stored on the card/QR/NFC — only verified server-side.
+    """
     raw = card_identifier.strip()
     if raw.startswith("DALALINK:"):
         verified_code = verify_qr_token_signature(raw)
@@ -27,7 +33,44 @@ def _resolve_card_by_input(db: Session, card_identifier: str) -> Optional[Transp
                 TransportCard.qr_token == raw,
             )
         )
+    if raw.upper().startswith("NFC:"):
+        uid = raw[4:].strip().upper()
+        if not uid:
+            return None
+        return db.scalar(select(TransportCard).where(TransportCard.nfc_uid == uid))
     return db.scalar(select(TransportCard).where(TransportCard.card_code == raw.upper()))
+
+
+def bind_nfc_to_card(
+    db: Session,
+    card_code: str,
+    nfc_uid: str,
+    card_technology: str = "QR+NFC",
+    actor_user_id: Optional[int] = None,
+) -> TransportCard:
+    card = _resolve_card_by_input(db, card_code)
+    if not card:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cartão não encontrado.")
+    clean_uid = nfc_uid.strip().upper()
+    existing = db.scalar(
+        select(TransportCard).where(TransportCard.nfc_uid == clean_uid, TransportCard.id != card.id)
+    )
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Este UID NFC ({clean_uid}) já está associado ao cartão {existing.card_code}.",
+        )
+    card.nfc_uid = clean_uid
+    card.card_technology = card_technology
+    record_audit(
+        db,
+        action="CARD_NFC_BOUND",
+        entity_type="TransportCard",
+        entity_id=card.id,
+        actor_user_id=actor_user_id,
+        details={"card_code": card.card_code, "nfc_uid": clean_uid, "technology": card_technology},
+    )
+    return card
 
 
 def _lock_wallet(db: Session, wallet_id: int) -> Wallet:

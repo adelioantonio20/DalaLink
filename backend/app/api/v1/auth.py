@@ -189,6 +189,12 @@ def list_demo_accounts():
                 "environment": "Portal Empresarial",
             },
             {
+                "role": "OWNER",
+                "label": "Proprietário / Frota — Frota DalaLink Luanda (3 viaturas)",
+                "email": "frota@dalalink.ao",
+                "environment": "Portal do Proprietário & Frotas",
+            },
+            {
                 "role": "ADMIN",
                 "label": "Administração — Adélio António (Torre de Controlo Luanda)",
                 "email": "admin@dalalink.ao",

@@ -100,3 +100,21 @@ class Stop(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_luanda, nullable=False)
 
     route: Mapped[Optional["Route"]] = relationship(back_populates="stops")
+
+
+class RecurringCorporateBooking(Base):
+    __tablename__ = "recurring_corporate_bookings"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    company_id: Mapped[int] = mapped_column(ForeignKey("companies.id", ondelete="CASCADE"), nullable=False)
+    route_id: Mapped[int] = mapped_column(ForeignKey("routes.id", ondelete="CASCADE"), nullable=False)
+    days_of_week: Mapped[str] = mapped_column(String(64), default="SEG,TER,QUA,QUI,SEX", nullable=False)
+    shift_time: Mapped[str] = mapped_column(String(16), default="17:00", nullable=False)
+    vehicle_capacity_hint: Mapped[int] = mapped_column(Integer, default=12, nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    last_dispatched_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=now_luanda, nullable=False)
+
+    company: Mapped["Company"] = relationship()
+    route: Mapped["Route"] = relationship()
+

@@ -121,10 +121,10 @@ export const QrScannerPanel: React.FC<QrScannerPanelProps> = ({
 
       <div className="space-y-1.5">
         <p className="text-[11px] font-medium uppercase tracking-wider text-slate-400">
-          Cartões de demonstração rápida (Luanda)
+          Cartões QR / NFC de demonstração rápida (Luanda)
         </p>
         <div className="flex flex-wrap gap-2">
-          {suggestedCards.map((code) => (
+          {[...suggestedCards, 'NFC:NFC-AO-000001'].map((code) => (
             <button
               key={code}
               type="button"

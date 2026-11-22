@@ -5,6 +5,7 @@ import { PassengerApp } from './apps/passenger/PassengerApp';
 import { DriverApp } from './apps/driver/DriverApp';
 import { AdminDashboard } from './apps/admin/AdminDashboard';
 import { CorporatePortal } from './apps/corporate/CorporatePortal';
+import { OwnerPortal } from './apps/owner/OwnerPortal';
 
 const PortalRouter: React.FC = () => {
   const { user, loading } = useAuth();
@@ -26,6 +27,8 @@ const PortalRouter: React.FC = () => {
       return <DriverApp />;
     case 'ADMIN':
       return <AdminDashboard />;
+    case 'OWNER':
+      return <OwnerPortal />;
     case 'COMPANY_ADMIN':
     case 'EMPLOYEE':
       return <CorporatePortal />;
