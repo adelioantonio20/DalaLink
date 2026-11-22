@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="pt-AO">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>DalaLink Luanda</title>
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --card: #ffffff;
+      --ink: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --emerald: #0d7c5f;
+      --emerald-dark: #095b45;
+      --emerald-soft: #ecfdf5;
+      --amber: #d97706;
+      --amber-soft: #fffbeb;
+      --red: #dc2626;
+      --red-soft: #fef2f2;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      padding-bottom: 78px;
+    }
+    body.driver-mode {
+      background: #0b1220;
+      color: #f8fafc;
+    }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: var(--emerald);
+      color: #fff;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 10px rgba(15, 23, 42, 0.14);
+    }
+    body.driver-mode .topbar {
+      background: #0f172a;
+      border-bottom: 1px solid #1e293b;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .brand-badge {
+      width: 34px; height: 34px; border-radius: 10px;
+      background: rgba(255,255,255,0.18);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 13px; letter-spacing: 0.04em;
+    }
+    .brand-title { font-size: 16px; font-weight: 800; line-height: 1.1; }
+    .brand-sub { font-size: 11px; opacity: 0.85; }
+    .top-btn {
+      background: rgba(255,255,255,0.16);
+      color: #fff; border: 0; border-radius: 10px;
+      padding: 7px 10px; font-size: 11px; font-weight: 700;
+    }
+    .wrap { max-width: 680px; margin: 0 auto; padding: 12px; display: flex; flex-direction: column; gap: 12px; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    }
+    body.driver-mode .card {
+      background: #131c2e;
+      border-color: #233049;
+      color: #f8fafc;
+    }
+    .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .title { font-size: 15px; font-weight: 800; margin: 0 0 6px 0; }
+    .sub { font-size: 12px; color: var(--muted); margin: 0; }
+    body.driver-mode .sub { color: #94a3b8; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .pill {
+      display: inline-flex; align-items: center; padding: 3px 9px;
+      border-radius: 999px; font-size: 11px; font-weight: 700;
+    }
+    .pill-ok { background: var(--emerald-soft); color: var(--emerald-dark); }
+    .pill-warn { background: var(--amber-soft); color: #92400e; }
+    .pill-err { background: var(--red-soft); color: var(--red); }
+    body.driver-mode .pill-ok { background: rgba(16,185,129,0.2); color: #6ee7b7; }
+    body.driver-mode .pill-warn { background: rgba(245,158,11,0.2); color: #fcd34d; }
+    body.driver-mode .pill-err { background: rgba(239,68,68,0.2); color: #fca5a5; }
+    select, input {
+      width: 100%; padding: 10px 11px; border-radius: 12px;
+      border: 1px solid #cbd5e1; background: #fff; color: #0f172a;
+      font-size: 13px; font-weight: 600;
+    }
+    body.driver-mode input, body.driver-mode select {
+      background: #0b1220; color: #fff; border-color: #334155;
+    }
+    label.lbl { display: block; font-size: 11px; font-weight: 700; color: var(--muted); margin-bottom: 4px; }
+    body.driver-mode label.lbl { color: #94a3b8; }
+    .btn {
+      width: 100%; border: 0; border-radius: 12px; padding: 13px 14px;
+      font-size: 13px; font-weight: 800; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .btn-primary { background: var(--emerald); color: #fff; }
+    .btn-primary:active { background: var(--emerald-dark); }
+    .btn-amber { background: var(--amber); color: #fff; }
+    .btn-dark { background: #0f172a; color: #fff; }
+    .btn-danger { background: var(--red); color: #fff; }
+    .btn-outline { background: transparent; border: 1px solid #cbd5e1; color: var(--ink); }
+    body.driver-mode .btn-outline { border-color: #334155; color: #e2e8f0; }
+    .btn-sm { padding: 7px 10px; font-size: 11px; width: auto; border-radius: 9px; }
+    .chip {
+      border: 1px solid #cbd5e1; background: #f8fafc; color: #0f172a;
+      border-radius: 8px; padding: 6px 8px; font-size: 11px; font-weight: 700;
+    }
+    body.driver-mode .chip { background: #0b1220; border-color: #334155; color: #e2e8f0; }
+    .banner {
+      border-radius: 12px; padding: 10px 12px; font-size: 12px; font-weight: 700;
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    }
+    .banner-ok { background: var(--emerald-soft); color: var(--emerald-dark); border: 1px solid #a7f3d0; }
+    .banner-err { background: var(--red-soft); color: var(--red); border: 1px solid #fecaca; }
+    .mob-card {
+      background: linear-gradient(135deg, #0f172a 0%, #134e4a 100%);
+      color: #fff; border-radius: 16px; padding: 15px;
+    }
+    .map-box {
+      border-radius: 14px; overflow: hidden; border: 1px solid var(--border); background: #eef6f4;
+    }
+    body.driver-mode .map-box { background: #0f1b2d; border-color: #233049; }
+    .list-item {
+      padding: 9px 0; border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12px;
+    }
+    body.driver-mode .list-item { border-color: #1e293b; }
+    .list-item:last-child { border-bottom: 0; }
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 30;
+      background: #ffffff; border-top: 1px solid var(--border);
+      display: grid; grid-template-columns: repeat(5, 1fr);
+      padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+    }
+    body.driver-mode .bottom-nav { background: #0f172a; border-color: #1e293b; }
+    .nav-btn {
+      border: 0; background: transparent; color: var(--muted);
+      font-size: 10px; font-weight: 700; padding: 5px 2px;
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      border-radius: 10px;
+    }
+    .nav-btn.active { color: var(--emerald); background: var(--emerald-soft); }
+    body.driver-mode .nav-btn.active { color: #34d399; background: rgba(16,185,129,0.16); }
+    .nav-ico { font-size: 15px; line-height: 1; }
+    .kpi { background: #f8fafc; border: 1px solid var(--border); border-radius: 12px; padding: 10px; }
+    body.driver-mode .kpi { background: #0b1220; border-color: #233049; }
+    .kpi-v { font-size: 17px; font-weight: 800; margin-top: 3px; }
+    .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; background: #e2e8f0; padding: 3px; border-radius: 10px; }
+    .seg button { border: 0; border-radius: 8px; padding: 6px; font-size: 11px; font-weight: 800; background: transparent; color: #475569; }
+    .seg button.on { background: #fff; color: #0f172a; box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-badge">DL</div>
+      <div>
+        <div class="brand-title">DalaLink</div>
+        <div class="brand-sub" id="top-sub">Luanda • Kwanza (AOA)</div>
+      </div>
+    </div>
+    <button class="top-btn" onclick="resetDemo()">Repor Piloto</button>
+  </header>
+
+  <div class="wrap">
+    <div id="banner" style="display:none"></div>
+    <div id="root"></div>
+  </div>
+
+  <nav class="bottom-nav" id="bnav"></nav>
+
+  <script>
+    const STORAGE_KEY = 'dalalink_luanda_apk_v1';
+
+    const STOPS = [
+      { zone: 'Gamek', name: 'Paragem Principal do Gamek', lat: -8.8842, lng: 13.2148, x: 245, y: 232 },
+      { zone: 'Aeroporto', name: 'Aeroporto Int. 4 de Fevereiro', lat: -8.8584, lng: 13.2312, x: 300, y: 162 },
+      { zone: 'Maianga', name: 'Largo da Maianga', lat: -8.8318, lng: 13.2345, x: 312, y: 102 },
+      { zone: 'Mutamba', name: 'Largo da Mutamba (Centro)', lat: -8.8147, lng: 13.2302, x: 295, y: 66 },
+      { zone: 'Ingombota', name: 'Marginal / Ingombota', lat: -8.8095, lng: 13.2358, x: 324, y: 52 },
+      { zone: 'Samba', name: 'Praia da Samba / Corimba', lat: -8.8672, lng: 13.1975, x: 185, y: 185 },
+      { zone: 'Talatona', name: 'Centro Convenções Talatona', lat: -8.9186, lng: 13.1846, x: 145, y: 292 },
+      { zone: 'Benfica', name: 'Rotunda do Benfica', lat: -8.9475, lng: 13.1652, x: 105, y: 342 },
+      { zone: 'Kilamba', name: 'Centralidade do Kilamba', lat: -9.0008, lng: 13.2683, x: 375, y: 365 },
+      { zone: 'Viana', name: 'Ponte Partida / Viana', lat: -8.9036, lng: 13.3745, x: 520, y: 262 },
+    ];
+
+    function initialState() {
+      return {
+        env: 'passenger',
+        adminTab: 'overview',
+        pickup: 'Gamek',
+        dropoff: 'Aeroporto',
+        isGroup: false,
+        companions: [],
+        soundOn: true,
+        nextId: 101,
+        qrInput: 'MOB-000001',
+        corpCap: 12,
+        apiUrl: '',
+        cards: [
+          { code: 'MOB-000001', nfc: 'NFC-AO-000001', tech: 'QR+NFC', holder: 'Mateus Domingos', balance: 10000, status: 'ACTIVE' },
+          { code: 'MOB-000002', nfc: null, tech: 'QR', holder: 'Ana Paula Costa', balance: 5000, status: 'ACTIVE' },
+          { code: 'MOB-000003', nfc: null, tech: 'QR', holder: 'João Manuel', balance: 400, status: 'ACTIVE' },
+          { code: 'MOB-000004', nfc: null, tech: 'QR', holder: 'Sara Baptista', balance: 8000, status: 'BLOCKED' },
+        ],
+        transactions: [
+          { id: 1, card: 'MOB-000001', type: 'TOPUP_ADMIN', amount: 10000, before: 0, after: 10000, desc: 'Saldo inicial administrativo', refunded: false, time: '08:00' },
+          { id: 2, card: 'MOB-000002', type: 'TOPUP_ADMIN', amount: 5000, before: 0, after: 5000, desc: 'Saldo inicial administrativo', refunded: false, time: '08:05' },
+        ],
+        drivers: [
+          { id: 1, name: 'Carlos Eduardo', plate: 'LD-42-18-AB', vehicle: 'Hyundai i10', color: 'Branco', cap: 4, ver: 'APPROVED', status: 'AVAILABLE', zone: 'Gamek', x: 256, y: 224, rating: 4.95, trips: 0, gross: 0, fee: 0, net: 0 },
+          { id: 2, name: 'Fernando Quiosa', plate: 'LD-88-90-CD', vehicle: 'Toyota HiAce', color: 'Azul/Branco', cap: 12, ver: 'APPROVED', status: 'AVAILABLE', zone: 'Maianga', x: 318, y: 108, rating: 4.88, trips: 0, gross: 0, fee: 0, net: 0 },
+          { id: 3, name: 'Miguel Teixeira', plate: 'LD-15-77-EF', vehicle: 'Kia Picanto', color: 'Cinza', cap: 4, ver: 'PENDING', status: 'OFFLINE', zone: 'Talatona', x: 155, y: 288, rating: 4.90, trips: 0, gross: 0, fee: 0, net: 0 },
+        ],
+        employees: [
+          { id: 1, name: 'Sofia Mendes', dept: 'Admin', dropoff: 'Maianga', shift: '17:00', status: 'ACTIVE' },
+          { id: 2, name: 'Pedro Nogueira', dept: 'Engenharia', dropoff: 'Aeroporto', shift: '17:00', status: 'ACTIVE' },
+          { id: 3, name: 'Beatriz Lopes', dept: 'Finanças', dropoff: 'Mutamba', shift: '17:00', status: 'ACTIVE' },
+          { id: 4, name: 'Rui Tavares', dept: 'Logística', dropoff: 'Kilamba', shift: '17:00', status: 'ACTIVE' },
+          { id: 5, name: 'Cláudia Neto', dept: 'RH', dropoff: 'Gamek', shift: '17:00', status: 'ACTIVE' },
+        ],
+        corporateRequests: [],
+        activeRequest: null,
+        activeTrip: null,
+        completedTrips: [],
+        auditLogs: [
+          { time: '08:00', action: 'SYSTEM_INIT', entity: 'Luanda', detail: 'Plataforma DalaLink inicializada com tarifa Gamek → Aeroporto = 1.000 AOA.' }
+        ]
+      };
+    }
+
+    let state = (() => {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        return saved ? Object.assign(initialState(), JSON.parse(saved)) : initialState();
+      } catch {
+        return initialState();
+      }
+    })();
+
+    function save() {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch {}
+    }
+
+    function resetDemo() {
+      state = initialState();
+      save();
+      showMsg('Dados de demonstração de Luanda repostos (MOB-000001 = 10.000 AOA).', 'ok');
+      render();
+    }
+
+    const fmtAOA = (n) => `${Math.round(Number(n || 0)).toLocaleString('pt-PT')} AOA`;
+    const nowTime = () => new Date().toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const getStop = (z) => STOPS.find(s => s.zone === z) || STOPS[0];
+
+    function beep(kind) {
+      if (!state.soundOn) return;
+      try {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (!Ctx) return;
+        const c = new Ctx(), o = c.createOscillator(), g = c.createGain();
+        o.connect(g); g.connect(c.destination);
+        const t = c.currentTime;
+        o.frequency.setValueAtTime(kind === 'err' ? 220 : kind === 'offer' ? 760 : 620, t);
+        if (kind !== 'err') o.frequency.setValueAtTime(kind === 'offer' ? 980 : 880, t + 0.12);
+        g.gain.setValueAtTime(0.15, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.34);
+        o.start(t); o.stop(t + 0.35);
+      } catch {}
+    }
+
+    function speak(txt) {
+      if (!state.soundOn) return;
+      try {
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+          const u = new SpeechSynthesisUtterance(txt);
+          u.lang = 'pt-PT';
+          window.speechSynthesis.speak(u);
+        }
+      } catch {}
+    }
+
+    function showMsg(txt, type = 'ok') {
+      const b = document.getElementById('banner');
+      b.style.display = 'flex';
+      b.className = `banner ${type === 'ok' ? 'banner-ok' : 'banner-err'}`;
+      b.innerHTML = `<span>${txt}</span><button onclick="document.getElementById('banner').style.display='none'" style="border:0;background:transparent;font-weight:800;color:inherit">✕</button>`;
+    }
+
+    function audit(action, entity, detail) {
+      state.auditLogs.unshift({ time: nowTime(), action, entity, detail });
+    }
+
+    function quote(pZone, dZone, count) {
+      const a = getStop(pZone), b = getStop(dZone);
+      const R = 6371;
+      const dLat = (b.lat - a.lat) * Math.PI / 180;
+      const dLng = (b.lng - a.lng) * Math.PI / 180;
+      const h = Math.sin(dLat/2)**2 + Math.cos(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.sin(dLng/2)**2;
+      const km = Math.max(0.8, +(2 * R * Math.atan2(Math.sqrt(h), Math.sqrt(1-h)) * 1.28).toFixed(2));
+      const min = Math.max(3, Math.round((km / 22.4) * 60));
+      const raw = 450 + km * 90 + min * 15;
+      const perPass = Math.max(800, Math.round(raw / 50) * 50);
+      return { km, min, perPass, total: perPass * count };
+    }
+
+    function renderMap(showRoute, showDemand) {
+      const dark = state.env === 'driver';
+      const p = getStop(state.activeTrip ? state.activeTrip.pickup : state.pickup);
+      const d = getStop(state.activeTrip ? state.activeTrip.dropoff : state.dropoff);
+      const textCol = dark ? '#94a3b8' : '#475569';
+      const roadCol = dark ? '#26354d' : '#cbd5e1';
+
+      const heat = showDemand ? STOPS.map(s => {
+        const reqs = (state.activeRequest && state.activeRequest.pickup === s.zone ? 1 : 0) +
+          state.corporateRequests.filter(r => r.pickup === s.zone).length;
+        const avail = state.drivers.filter(v => v.ver === 'APPROVED' && v.status === 'AVAILABLE' && v.zone === s.zone).length;
+        const col = reqs >= 1 && avail === 0 ? '#dc2626' : reqs > 0 ? '#d97706' : '#0d7c5f';
+        return `<circle cx="${s.x}" cy="${s.y}" r="${reqs >= 1 ? 32 : 20}" fill="${col}" fill-opacity="0.22" stroke="${col}" stroke-width="1.2"/>`;
+      }).join('') : '';
+
+      const stops = STOPS.map(s => `
+        <circle cx="${s.x}" cy="${s.y}" r="4.5" fill="${textCol}" opacity="0.7"/>
+        <text x="${s.x + 7}" y="${s.y + 3}" font-size="11" fill="${textCol}" font-weight="700">${s.zone}</text>
+      `).join('');
+
+      const route = showRoute ? `
+        <line x1="${p.x}" y1="${p.y}" x2="${d.x}" y2="${d.y}" stroke="#0d7c5f" stroke-width="3.5" stroke-dasharray="6 5"/>
+        <circle cx="${p.x}" cy="${p.y}" r="10" fill="#0d7c5f" stroke="#fff" stroke-width="2.5"/>
+        <text x="${p.x}" y="${p.y + 3.5}" text-anchor="middle" font-size="9.5" fill="#fff" font-weight="800">P</text>
+        <circle cx="${d.x}" cy="${d.y}" r="10" fill="#d97706" stroke="#fff" stroke-width="2.5"/>
+        <text x="${d.x}" y="${d.y + 3.5}" text-anchor="middle" font-size="9.5" fill="#fff" font-weight="800">D</text>
+      ` : '';
+
+      const vehs = state.drivers.filter(v => v.ver === 'APPROVED').map(v => `
+        <circle cx="${v.x}" cy="${v.y}" r="11.5" fill="${v.status === 'AVAILABLE' ? '#059669' : '#0f172a'}" stroke="#fff" stroke-width="2.5"/>
+        <text x="${v.x}" y="${v.y + 3.5}" text-anchor="middle" font-size="8.5" fill="#fff" font-weight="800">${v.id === 1 ? 'i10' : 'V'}</text>
+      `).join('');
+
+      return `
+        <div class="map-box">
+          <svg viewBox="0 0 580 390" style="width:100%;height:205px;display:block">
+            <path d="M0,0 L265,0 C240,65 185,120 140,210 C100,285 60,340 35,390 L0,390 Z" fill="#0ea5e9" fill-opacity="0.14"/>
+            <text x="16" y="34" font-size="11" fill="${textCol}" opacity="0.8" font-weight="700">Atlântico • Luanda</text>
+            <path d="M295,66 L312,102 L300,162 L245,232 L145,292 L105,342" fill="none" stroke="${roadCol}" stroke-width="3"/>
+            <path d="M245,232 L520,262 M145,292 L375,365" fill="none" stroke="${roadCol}" stroke-width="2.2"/>
+            ${heat}${stops}${route}${vehs}
+          </svg>
+        </div>
+      `;
+    }
+
+    // --- ACTIONS ---
+    function setEnv(e) { state.env = e; save(); render(); }
+    function addCompanion() {
+      const code = (document.getElementById('comp-code')?.value || '').trim().toUpperCase();
+      const c = state.cards.find(x => x.code === code);
+      if (!c) return showMsg('Cartão não encontrado.', 'err');
+      if (c.status !== 'ACTIVE') return showMsg(`Cartão ${c.code} está ${c.status}.`, 'err');
+      if (state.companions.some(x => x.code === c.code)) return showMsg('Já está no grupo.', 'err');
+      state.companions.push({ code: c.code, holder: c.holder });
+      save();
+      showMsg(`Cartão ${c.code} (${c.holder}) validado para o grupo.`);
+      render();
+    }
+
+    function createRequest() {
+      if (state.pickup === state.dropoff) return showMsg('Origem e destino devem ser diferentes.', 'err');
+      const count = state.isGroup ? Math.max(2, state.companions.length + 1) : 1;
+      const q = quote(state.pickup, state.dropoff, count);
+      const drv = state.drivers.find(d => d.ver === 'APPROVED' && d.status === 'AVAILABLE' && d.cap >= count);
+      state.activeRequest = {
+        id: state.nextId++, pickup: state.pickup, dropoff: state.dropoff,
+        type: state.isGroup ? 'GROUP' : 'INDIVIDUAL', count,
+        km: q.km, min: q.min, perPass: q.perPass, total: q.total,
+        offeredDriverId: drv ? drv.id : null, rejectedIds: []
+      };
+      audit('REQUEST_CREATED', `#${state.activeRequest.id}`, `${state.pickup} → ${state.dropoff} (${fmtAOA(q.total)})`);
+      save();
+      beep('offer');
+      speak(`Nova solicitação de transporte de ${state.pickup} para ${state.dropoff}.`);
+      showMsg(`Solicitação #${state.activeRequest.id} enviada! Toque em "Motorista" em baixo para aceitar.`);
+      render();
+    }
+
+    function cancelReq() {
+      state.activeRequest = null;
+      save();
+      showMsg('Solicitação cancelada.');
+      render();
+    }
+
+    function acceptOffer() {
+      const r = state.activeRequest; if (!r) return;
+      const drv = state.drivers.find(d => d.id === r.offeredDriverId) || state.drivers[0];
+      drv.status = 'BUSY';
+      state.activeTrip = {
+        id: state.nextId++, driverId: drv.id, pickup: r.pickup, dropoff: r.dropoff,
+        count: r.count, type: r.type, perPass: r.perPass, total: r.total, paid: 0,
+        status: 'DRIVER_EN_ROUTE', eta: 4, pin: String(Math.floor(1000 + Math.random() * 9000)),
+        boarded: []
+      };
+      state.activeRequest = null;
+      audit('TRIP_ACCEPTED', `#${state.activeTrip.id}`, `${drv.name} (${drv.vehicle} ${drv.plate})`);
+      save();
+      beep('ok');
+      speak('Viagem aceite. Siga para o ponto de recolha.');
+      showMsg(`Viagem aceite (${drv.vehicle} • ${drv.plate}).`);
+      render();
+    }
+
+    function rejectOffer() {
+      const r = state.activeRequest; if (!r) return;
+      r.rejectedIds.push(r.offeredDriverId);
+      const next = state.drivers.find(d => d.ver === 'APPROVED' && d.status === 'AVAILABLE' && d.cap >= r.count && !r.rejectedIds.includes(d.id));
+      r.offeredDriverId = next ? next.id : null;
+      audit('OFFER_REJECTED', `#${r.id}`, next ? `Redistribuído para ${next.name}` : 'Sem motoristas livres');
+      save();
+      showMsg(next ? `Redistribuída para ${next.name} (${next.vehicle}).` : 'Sem outros motoristas livres.');
+      render();
+    }
+
+    function gpsStep() {
+      const t = state.activeTrip; if (!t) return;
+      const drv = state.drivers.find(d => d.id === t.driverId);
+      const target = getStop(t.status === 'IN_PROGRESS' ? t.dropoff : t.pickup);
+      drv.x = Math.round(drv.x + (target.x - drv.x) * 0.5);
+      drv.y = Math.round(drv.y + (target.y - drv.y) * 0.5);
+      t.eta = Math.max(1, t.eta - 1);
+      save();
+      showMsg(`GPS atualizado • ETA ${t.eta} min.`);
+      render();
+    }
+
+    function markArrived() {
+      const t = state.activeTrip; if (!t) return;
+      const drv = state.drivers.find(d => d.id === t.driverId);
+      const p = getStop(t.pickup);
+      drv.x = p.x; drv.y = p.y; drv.zone = p.zone;
+      t.status = 'DRIVER_ARRIVED'; t.eta = 0;
+      audit('DRIVER_ARRIVED', `#${t.id}`, `Chegou ao ${t.pickup}`);
+      save();
+      beep('ok');
+      speak('Chegada confirmada. Leia o cartão do passageiro.');
+      showMsg('Chegada confirmada! Valide o cartão QR ou NFC abaixo.');
+      render();
+    }
+
+    function validateCard(override) {
+      const t = state.activeTrip; if (!t) return;
+      const raw = (override ?? document.getElementById('qr-val')?.value ?? state.qrInput).trim();
+      state.qrInput = raw;
+      const card = raw.toUpperCase().startsWith('NFC:')
+        ? state.cards.find(c => c.nfc && c.nfc.toUpperCase() === raw.slice(4).trim().toUpperCase())
+        : state.cards.find(c => c.code === raw.toUpperCase());
+
+      if (!card) { beep('err'); return showMsg(`Cartão "${raw}" não reconhecido.`, 'err'); }
+      if (t.boarded.includes(card.code)) {
+        beep('err');
+        audit('DUPLICATE_BLOCKED', `#${t.id}`, `Duplicado impedido em ${card.code}`);
+        save();
+        return showMsg(`Débito duplicado impedido para ${card.code}!`, 'err');
+      }
+      if (card.status !== 'ACTIVE') {
+        beep('err');
+        audit('DECLINED_BLOCKED', card.code, `Cartão ${card.status}`);
+        save();
+        return showMsg(`Recusado: cartão ${card.code} está ${card.status}.`, 'err');
+      }
+      if (card.balance < t.perPass) {
+        beep('err');
+        audit('DECLINED_LOW_BAL', card.code, `Saldo ${fmtAOA(card.balance)} < ${fmtAOA(t.perPass)}`);
+        save();
+        return showMsg(`Saldo insuficiente (${fmtAOA(card.balance)} < ${fmtAOA(t.perPass)}).`, 'err');
+      }
+
+      const before = card.balance;
+      card.balance -= t.perPass;
+      t.paid += t.perPass;
+      t.boarded.push(card.code);
+      state.transactions.unshift({
+        id: state.transactions.length + 1, card: card.code, type: 'TRIP_DEBIT',
+        amount: t.perPass, before, after: card.balance,
+        desc: `Viagem #${t.id}: ${t.pickup} → ${t.dropoff}`, refunded: false, time: nowTime()
+      });
+      audit('BOARDING_OK', `#${t.id}`, `${card.code} debitado ${fmtAOA(t.perPass)} → Saldo ${fmtAOA(card.balance)}`);
+      save();
+      beep('ok');
+      speak('Embarque autorizado.');
+      showMsg(`AUTORIZADO! ${card.code}: ${fmtAOA(before)} → ${fmtAOA(card.balance)}.`);
+      render();
+    }
+
+    function startTrip() {
+      const t = state.activeTrip; if (!t) return;
+      if (t.boarded.length < 1) return showMsg('Valide o cartão QR/NFC antes de iniciar.', 'err');
+      t.status = 'IN_PROGRESS'; t.eta = 10;
+      audit('TRIP_STARTED', `#${t.id}`, `Em curso para ${t.dropoff}`);
+      save(); beep('ok'); speak('Viagem iniciada.');
+      showMsg(`Viagem iniciada rumo a ${t.dropoff}!`);
+      render();
+    }
+
+    function completeTrip() {
+      const t = state.activeTrip; if (!t) return;
+      const drv = state.drivers.find(d => d.id === t.driverId);
+      const dest = getStop(t.dropoff);
+      const gross = t.paid || t.total;
+      const fee = Math.round(gross * 0.15);
+      const net = gross - fee;
+      drv.x = dest.x; drv.y = dest.y; drv.zone = dest.zone; drv.status = 'AVAILABLE';
+      drv.trips += 1; drv.gross += gross; drv.fee += fee; drv.net += net;
+      t.status = 'COMPLETED'; t.gross = gross; t.fee = fee; t.net = net; t.time = nowTime();
+      state.completedTrips.unshift(t);
+      state.activeTrip = null;
+      audit('TRIP_COMPLETED', `#${t.id}`, `Bruto ${fmtAOA(gross)} | Comissão ${fmtAOA(fee)} | Líquido ${fmtAOA(net)}`);
+      save(); beep('ok'); speak('Viagem concluída com sucesso.');
+      showMsg(`Viagem concluída! Líquido: ${fmtAOA(net)} • Comissão: ${fmtAOA(fee)}.`);
+      render();
+    }
+
+    function dispatchCorp() {
+      const active = state.employees.filter(e => e.status === 'ACTIVE');
+      const map = {};
+      active.forEach(e => { (map[e.dropoff] = map[e.dropoff] || []).push(e); });
+      let groups = 0;
+      Object.entries(map).forEach(([dest, list]) => {
+        for (let i = 0; i < list.length; i += state.corpCap) {
+          const ch = list.slice(i, i + state.corpCap);
+          const q = quote('Talatona', dest, ch.length);
+          state.corporateRequests.unshift({ id: state.nextId++, pickup: 'Talatona', dropoff: dest, count: ch.length, total: q.total, time: nowTime() });
+          groups++;
+        }
+      });
+      audit('CORP_DISPATCH', 'Atlântico', `${active.length} colab. em ${groups} lote(s)`);
+      save(); beep('ok');
+      showMsg(`Turno 17:00 agrupado: ${active.length} colaboradores em ${groups} rota(s).`);
+      render();
+    }
+
+    function adminTopup() {
+      const code = document.getElementById('adm-card')?.value;
+      const amt = Number(document.getElementById('adm-amt')?.value || 0);
+      const c = state.cards.find(x => x.code === code);
+      if (!c || amt <= 0) return showMsg('Valor inválido.', 'err');
+      const before = c.balance; c.balance += amt;
+      state.transactions.unshift({ id: state.transactions.length + 1, card: c.code, type: 'TOPUP_ADMIN', amount: amt, before, after: c.balance, desc: 'Carregamento admin', refunded: false, time: nowTime() });
+      audit('TOPUP', c.code, `+${fmtAOA(amt)} → ${fmtAOA(c.balance)}`);
+      save(); showMsg(`${c.code} carregado (+${fmtAOA(amt)}).`); render();
+    }
+
+    function adminToggleCard(code) {
+      const c = state.cards.find(x => x.code === code); if (!c) return;
+      c.status = c.status === 'ACTIVE' ? 'BLOCKED' : 'ACTIVE';
+      audit('CARD_' + c.status, c.code, 'Admin'); save(); showMsg(`${c.code}: ${c.status}.`); render();
+    }
+
+    function adminBindNfc(code) {
+      const c = state.cards.find(x => x.code === code); if (!c) return;
+      c.nfc = 'NFC-AO-' + code.replace('MOB-', ''); c.tech = 'QR+NFC';
+      audit('NFC_BOUND', c.code, c.nfc); save(); showMsg(`NFC ${c.nfc} ativado.`); render();
+    }
+
+    function adminRefund(id) {
+      const tx = state.transactions.find(x => x.id === id);
+      if (!tx || tx.refunded) return showMsg('Já reembolsada.', 'err');
+      const c = state.cards.find(x => x.code === tx.card);
+      const before = c.balance; c.balance += tx.amount; tx.refunded = true;
+      state.transactions.unshift({ id: state.transactions.length + 1, card: c.code, type: 'REFUND', amount: tx.amount, before, after: c.balance, desc: `Reembolso Tx #${tx.id}`, refunded: false, time: nowTime() });
+      audit('REFUND', c.code, fmtAOA(tx.amount)); save(); showMsg(`Reembolso de ${fmtAOA(tx.amount)} creditado.`); render();
+    }
+
+    function approveDrv(id) {
+      const d = state.drivers.find(x => x.id === id); if (!d) return;
+      d.ver = 'APPROVED'; d.status = 'AVAILABLE';
+      audit('DRIVER_APPROVED', d.name, d.plate); save(); showMsg(`${d.name} aprovado!`); render();
+    }
+
+    function addFleetVeh() {
+      const plate = (document.getElementById('f-plate')?.value || '').trim().toUpperCase();
+      const model = (document.getElementById('f-model')?.value || 'i10').trim();
+      if (!plate) return showMsg('Indique a matrícula.', 'err');
+      state.drivers.push({ id: state.drivers.length + 1, name: 'Motorista Livre', plate, vehicle: 'Hyundai ' + model, color: 'Prata', cap: 4, ver: 'APPROVED', status: 'AVAILABLE', zone: 'Maianga', x: 306, y: 120, rating: 5.0, trips: 0, gross: 0, fee: 0, net: 0 });
+      audit('VEHICLE_ADDED', plate, model); save(); showMsg(`Viatura ${plate} adicionada.`); render();
+    }
+
+    function render() {
+      document.body.className = state.env === 'driver' ? 'driver-mode' : '';
+      const subMap = {
+        passenger: 'App Passageiro • MOB-000001',
+        driver: 'Cockpit Motorista • Hyundai i10',
+        corporate: 'Portal Empresarial • Atlântico',
+        owner: 'Gestão de Frotas • Proprietário',
+        admin: 'Torre de Controlo • Luanda'
+      };
+      document.getElementById('top-sub').textContent = subMap[state.env];
+
+      const navItems = [
+        { id: 'passenger', ico: '🧭', lbl: 'Passageiro' },
+        { id: 'driver', ico: state.activeRequest ? '🔔' : '🚖', lbl: 'Motorista' },
+        { id: 'corporate', ico: '🏢', lbl: 'Empresa' },
+        { id: 'owner', ico: '🚗', lbl: 'Frota' },
+        { id: 'admin', ico: '📊', lbl: 'Admin' },
+      ];
+      document.getElementById('bnav').innerHTML = navItems.map(n => `
+        <button class="nav-btn ${state.env === n.id ? 'active' : ''}" onclick="setEnv('${n.id}')">
+          <span class="nav-ico">${n.ico}</span>
+          <span>${n.lbl}</span>
+        </button>
+      `).join('');
+
+      const root = document.getElementById('root');
+      if (state.env === 'passenger') root.innerHTML = viewPassenger();
+      else if (state.env === 'driver') root.innerHTML = viewDriver();
+      else if (state.env === 'corporate') root.innerHTML = viewCorporate();
+      else if (state.env === 'owner') root.innerHTML = viewOwner();
+      else root.innerHTML = viewAdmin();
+    }
+
+    function viewPassenger() {
+      const c = state.cards[0];
+      const count = state.isGroup ? Math.max(2, state.companions.length + 1) : 1;
+      const q = quote(state.pickup, state.dropoff, count);
+
+      let actionCard = '';
+      if (state.activeTrip) {
+        const drv = state.drivers.find(d => d.id === state.activeTrip.driverId);
+        actionCard = `
+          <div class="card">
+            <div class="row">
+              <span class="pill pill-ok">${state.activeTrip.status}</span>
+              <strong style="font-size:12px">ETA ${state.activeTrip.eta} min</strong>
+            </div>
+            <div style="margin-top:10px" class="row">
+              <div>
+                <div class="title" style="margin:0">${drv.vehicle} (${drv.color})</div>
+                <div class="sub">${drv.name} • ★ ${drv.rating}</div>
+              </div>
+              <span class="mono pill pill-warn">${drv.plate}</span>
+            </div>
+            <div class="row" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:12px">
+              <span>PIN: <strong class="mono" style="font-size:15px">${state.activeTrip.pin}</strong></span>
+              <span>Pago: <strong style="color:var(--emerald)">${fmtAOA(state.activeTrip.paid)} / ${fmtAOA(state.activeTrip.total)}</strong></span>
+            </div>
+            <button class="btn btn-dark" style="margin-top:10px" onclick="setEnv('driver')">Abrir Motorista para Validar QR →</button>
+          </div>
+        `;
+      } else if (state.activeRequest) {
+        actionCard = `
+          <div class="card">
+            <div class="title">A procurar motorista em Luanda...</div>
+            <p class="sub">${state.activeRequest.pickup} → ${state.activeRequest.dropoff} • ${state.activeRequest.count} pass. • <strong>${fmtAOA(state.activeRequest.total)}</strong></p>
+            <div class="grid2" style="margin-top:10px">
+              <button class="btn btn-primary" onclick="setEnv('driver')">Ir ao Motorista</button>
+              <button class="btn btn-outline" onclick="cancelReq()">Cancelar</button>
+            </div>
+          </div>
+        `;
+      } else {
+        actionCard = `
+          <div class="card" style="display:flex;flex-direction:column;gap:10px">
+            <div class="row">
+              <div class="title" style="margin:0">Para onde vamos?</div>
+              <div class="seg" style="width:150px">
+                <button class="${!state.isGroup ? 'on' : ''}" onclick="state.isGroup=false;save();render()">Individual</button>
+                <button class="${state.isGroup ? 'on' : ''}" onclick="state.isGroup=true;save();render()">Grupo</button>
+              </div>
+            </div>
+            <div>
+              <label class="lbl">Ponto de Recolha</label>
+              <select onchange="state.pickup=this.value;save();render()">
+                ${STOPS.map(s => `<option value="${s.zone}" ${s.zone===state.pickup?'selected':''}>${s.zone} — ${s.name}</option>`).join('')}
+              </select>
+            </div>
+            <div>
+              <label class="lbl">Destino</label>
+              <select onchange="state.dropoff=this.value;save();render()">
+                ${STOPS.map(s => `<option value="${s.zone}" ${s.zone===state.dropoff?'selected':''}>${s.zone} — ${s.name}</option>`).join('')}
+              </select>
+            </div>
+            ${state.isGroup ? `
+              <div class="kpi" style="display:flex;flex-direction:column;gap:6px">
+                <div class="row"><strong style="font-size:12px">Grupo (${count} pass.)</strong><span class="sub">Validação individual</span></div>
+                <div class="row">
+                  <input id="comp-code" value="MOB-000002" placeholder="Ex: MOB-000002" class="mono"/>
+                  <button class="btn btn-dark btn-sm" onclick="addCompanion()">+ Validar</button>
+                </div>
+                ${state.companions.map(x => `<div style="font-size:11px;color:var(--emerald)">✓ ${x.code} (${x.holder})</div>`).join('')}
+              </div>
+            ` : ''}
+            <div class="kpi row">
+              <div style="font-size:12px"><strong>${q.km} km</strong> • ~${q.min} min<div class="sub">${fmtAOA(q.perPass)} / pass.</div></div>
+              <div style="text-align:right"><div class="sub">Tarifa Estimada</div><div style="font-size:20px;font-weight:800;color:var(--emerald)">${fmtAOA(q.total)}</div></div>
+            </div>
+            <button class="btn btn-primary" onclick="createRequest()">Confirmar Solicitação de Transporte</button>
+          </div>
+        `;
+      }
+
+      return `
+        ${renderMap(true, false)}
+        ${actionCard}
+        <div class="mob-card">
+          <div class="row">
+            <div>
+              <div style="font-size:10px;opacity:.75;text-transform:uppercase;letter-spacing:.08em">Cartão DalaLink • Saldo Servidor</div>
+              <div style="font-size:26px;font-weight:800;margin:4px 0">${fmtAOA(c.balance)}</div>
+              <div class="mono" style="font-size:12px;color:#6ee7b7">${c.code} • ${c.tech}: ${c.nfc}</div>
+              <div style="font-size:11px;opacity:.85;margin-top:4px">Titular: ${c.holder}</div>
+            </div>
+            <div style="background:#fff;padding:6px;border-radius:10px">
+              <svg width="64" height="64" viewBox="0 0 21 21">
+                <rect width="21" height="21" fill="#fff"/>
+                <rect x="1" y="1" width="6" height="6" fill="#0f172a"/><rect x="2" y="2" width="4" height="4" fill="#fff"/><rect x="3" y="3" width="2" height="2" fill="#0f172a"/>
+                <rect x="14" y="1" width="6" height="6" fill="#0f172a"/><rect x="15" y="2" width="4" height="4" fill="#fff"/><rect x="16" y="3" width="2" height="2" fill="#0f172a"/>
+                <rect x="1" y="14" width="6" height="6" fill="#0f172a"/><rect x="2" y="15" width="4" height="4" fill="#fff"/><rect x="3" y="16" width="2" height="2" fill="#0f172a"/>
+                <rect x="9" y="3" width="2" height="4" fill="#0f172a"/><rect x="9" y="10" width="3" height="3" fill="#0f172a"/><rect x="14" y="11" width="5" height="2" fill="#0f172a"/><rect x="15" y="15" width="4" height="4" fill="#0f172a"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="title">Extrato da Carteira (${c.code})</div>
+          ${state.transactions.filter(t => t.card === c.code).slice(0, 6).map(t => `
+            <div class="list-item">
+              <div><strong>${t.desc}</strong><div class="sub">${t.time} • Saldo: ${fmtAOA(t.after)}</div></div>
+              <span class="mono" style="font-weight:800;color:${t.type==='TRIP_DEBIT'?'var(--red)':'var(--emerald)'}">
+                ${t.type==='TRIP_DEBIT'?'-':'+'}${fmtAOA(t.amount)}
+              </span>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function viewDriver() {
+      const d = state.drivers[0], r = state.activeRequest, t = state.activeTrip;
+      return `
+        <div class="card row">
+          <div>
+            <div class="title" style="margin:0">${d.vehicle} • ${d.plate}</div>
+            <div class="sub">${d.name} • ${d.zone} • Líquido: <strong style="color:#34d399">${fmtAOA(d.net)}</strong></div>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="state.soundOn=!state.soundOn;save();render()">${state.soundOn ? '🔊 Voz ON' : '🔇 OFF'}</button>
+        </div>
+
+        ${r && !t ? `
+          <div class="card" style="border:2px solid #f59e0b">
+            <div class="row">
+              <span class="pill pill-warn">NOVA SOLICITAÇÃO</span>
+              <strong style="font-size:18px;color:#34d399">${fmtAOA(r.total)}</strong>
+            </div>
+            <div class="title" style="margin-top:8px">${r.pickup} → ${r.dropoff}</div>
+            <div class="sub">${r.count} passageiro(s) • ${r.km} km • ~${r.min} min</div>
+            <div class="grid2" style="margin-top:12px">
+              <button class="btn btn-danger" onclick="rejectOffer()">REJEITAR</button>
+              <button class="btn btn-primary" onclick="acceptOffer()">ACEITAR</button>
+            </div>
+          </div>
+        ` : ''}
+
+        ${renderMap(!!(t || r), false)}
+
+        ${t ? `
+          <div class="card" style="display:flex;flex-direction:column;gap:10px">
+            <div class="row">
+              <div><div class="sub">VIAGEM #${t.id} • ${t.status}</div><div class="title" style="margin:0">${t.pickup} → ${t.dropoff}</div></div>
+              <div style="text-align:right;font-size:12px"><div>Validados: <strong>${t.boarded.length}/${t.count}</strong></div><div class="mono" style="color:#fcd34d">PIN ${t.pin}</div></div>
+            </div>
+            <div class="grid2">
+              <button class="btn btn-outline" onclick="gpsStep()">Avançar GPS</button>
+              ${t.status === 'DRIVER_EN_ROUTE'
+                ? `<button class="btn btn-amber" onclick="markArrived()">Marcar Chegada</button>`
+                : t.status === 'IN_PROGRESS'
+                  ? `<button class="btn btn-primary" onclick="completeTrip()">CONCLUIR VIAGEM</button>`
+                  : `<button class="btn btn-primary" onclick="startTrip()">INICIAR VIAGEM</button>`
+              }
+            </div>
+            <div class="kpi" style="display:flex;flex-direction:column;gap:8px">
+              <strong style="font-size:12px">Leitor QR / NFC (Débito Atómico)</strong>
+              <div class="row">
+                <input id="qr-val" value="${state.qrInput}" class="mono"/>
+                <button class="btn btn-primary btn-sm" onclick="validateCard()">Validar</button>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:6px">
+                ${['MOB-000001','NFC:NFC-AO-000001','MOB-000002','MOB-000003','MOB-000004'].map(c => `
+                  <button class="chip mono" onclick="validateCard('${c}')">${c}</button>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        ` : `
+          <div class="card">
+            <div class="title">Pronto para receber corridas</div>
+            <p class="sub">Vá ao separador <strong>Passageiro</strong> e confirme uma viagem de Gamek para o Aeroporto.</p>
+          </div>
+        `}
+      `;
+    }
+
+    function viewCorporate() {
+      const cost = state.corporateRequests.reduce((s, r) => s + r.total, 0);
+      return `
+        <div class="card" style="display:flex;flex-direction:column;gap:10px">
+          <div>
+            <div class="title" style="margin:0">Atlântico Energia & Serviços, Lda.</div>
+            <div class="sub">NIF 5000812345 • Turno 17:00 • Custo: <strong>${fmtAOA(cost)}</strong></div>
+          </div>
+          <div class="grid2">
+            <select onchange="state.corpCap=Number(this.value);save()">
+              <option value="2" ${state.corpCap===2?'selected':''}>Máx. 2 lug. (teste)</option>
+              <option value="4" ${state.corpCap===4?'selected':''}>Sedan (4 lug.)</option>
+              <option value="12" ${state.corpCap===12?'selected':''}>HiAce (12 lug.)</option>
+            </select>
+            <button class="btn btn-primary" onclick="dispatchCorp()">Agrupar 17:00</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="title">Colaboradores (${state.employees.length})</div>
+          ${state.employees.map(e => `
+            <div class="list-item">
+              <div><strong>${e.name}</strong><div class="sub">${e.dept} • ${e.shift}</div></div>
+              <strong>Talatona → ${e.dropoff}</strong>
+            </div>
+          `).join('')}
+        </div>
+        <div class="card">
+          <div class="title">Lotes Corporativos Despachados (${state.corporateRequests.length})</div>
+          ${state.corporateRequests.map(r => `
+            <div class="list-item">
+              <div><strong>${r.pickup} → ${r.dropoff}</strong> (${r.count} colab.)<div class="sub">${r.time}</div></div>
+              <strong style="color:var(--emerald)">${fmtAOA(r.total)}</strong>
+            </div>
+          `).join('') || `<p class="sub">Toque em Agrupar 17:00 para gerar viagens corporativas.</p>`}
+        </div>
+      `;
+    }
+
+    function viewOwner() {
+      const gross = state.drivers.reduce((s, d) => s + d.gross, 0);
+      const net = state.drivers.reduce((s, d) => s + d.net, 0);
+      return `
+        <div class="grid3">
+          <div class="kpi"><div class="sub">Viaturas</div><div class="kpi-v">${state.drivers.length}</div></div>
+          <div class="kpi"><div class="sub">Bruto</div><div class="kpi-v">${fmtAOA(gross)}</div></div>
+          <div class="kpi"><div class="sub">Líquido</div><div class="kpi-v" style="color:var(--emerald)">${fmtAOA(net)}</div></div>
+        </div>
+        <div class="card" style="display:flex;flex-direction:column;gap:8px">
+          <div class="title" style="margin:0">Adicionar Viatura à Frota</div>
+          <div class="grid2">
+            <input id="f-model" placeholder="Modelo (ex: i10)"/>
+            <input id="f-plate" placeholder="Matrícula LD" class="mono"/>
+          </div>
+          <button class="btn btn-primary" onclick="addFleetVeh()">Registar Viatura</button>
+        </div>
+        <div class="card">
+          <div class="title">Rentabilidade por Viatura</div>
+          ${state.drivers.map(d => `
+            <div class="list-item">
+              <div><strong>${d.vehicle}</strong> <span class="mono pill pill-warn">${d.plate}</span><div class="sub">${d.name} • ${d.zone} • ${d.trips} viagem(ns)</div></div>
+              <div style="text-align:right"><strong style="color:var(--emerald)">${fmtAOA(d.net)}</strong><div class="sub">Bruto ${fmtAOA(d.gross)}</div></div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function viewAdmin() {
+      const gross = state.completedTrips.reduce((s, t) => s + t.gross, 0);
+      const fee = state.completedTrips.reduce((s, t) => s + t.fee, 0);
+      const totalBal = state.cards.reduce((s, c) => s + c.balance, 0);
+
+      let body = '';
+      if (state.adminTab === 'overview') {
+        body = `
+          ${renderMap(!!(state.activeTrip || state.activeRequest), true)}
+          <div class="card">
+            <div class="title">Inteligência Estatística de Luanda</div>
+            <div class="mono" style="font-size:12px;color:var(--emerald);font-weight:800">STATISTICAL_RULES_V1 (${state.completedTrips.length}/500 viagens)</div>
+            <p class="sub" style="margin-top:4px">Sem previsões artificiais sem histórico suficiente. Integrações EMIS/Bilhética desativadas até autorização.</p>
+          </div>
+        `;
+      } else if (state.adminTab === 'cards') {
+        body = `
+          <div class="card" style="display:flex;flex-direction:column;gap:8px">
+            <div class="title" style="margin:0">Carregamento Administrativo (AOA)</div>
+            <select id="adm-card" class="mono">${state.cards.map(c => `<option value="${c.code}">${c.code} (${fmtAOA(c.balance)})</option>`).join('')}</select>
+            <div class="row"><input id="adm-amt" type="number" value="5000"/><button class="btn btn-primary btn-sm" onclick="adminTopup()">Carregar</button></div>
+          </div>
+          <div class="card">
+            <div class="title">Cartões QR / NFC</div>
+            ${state.cards.map(c => `
+              <div class="list-item">
+                <div><strong class="mono">${c.code}</strong> (${c.tech})<div class="sub">${c.holder} • ${fmtAOA(c.balance)} • ${c.status}</div></div>
+                <div style="display:flex;gap:4px">
+                  ${!c.nfc ? `<button class="chip" onclick="adminBindNfc('${c.code}')">NFC</button>` : ''}
+                  <button class="chip" onclick="adminToggleCard('${c.code}')">${c.status==='ACTIVE'?'Bloquear':'Ativar'}</button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+          <div class="card">
+            <div class="title">Reembolsos Autorizados</div>
+            ${state.transactions.filter(t => t.type === 'TRIP_DEBIT').slice(0, 5).map(t => `
+              <div class="list-item">
+                <div><strong>${t.card}</strong> • ${fmtAOA(t.amount)}<div class="sub">${t.desc}</div></div>
+                ${t.refunded ? `<span class="sub">Feito</span>` : `<button class="btn btn-amber btn-sm" onclick="adminRefund(${t.id})">Reembolsar</button>`}
+              </div>
+            `).join('') || `<p class="sub">Sem débitos para reembolsar.</p>`}
+          </div>
+        `;
+      } else if (state.adminTab === 'drivers') {
+        body = `
+          <div class="card">
+            <div class="title">Validação Documental de Motoristas</div>
+            ${state.drivers.map(d => `
+              <div class="list-item">
+                <div><strong>${d.name}</strong><div class="sub">${d.vehicle} (${d.plate}) • ${d.ver}</div></div>
+                ${d.ver !== 'APPROVED' ? `<button class="btn btn-primary btn-sm" onclick="approveDrv(${d.id})">Aprovar</button>` : `<span class="pill pill-ok">Aprovado</span>`}
+              </div>
+            `).join('')}
+          </div>
+        `;
+      } else {
+        body = `
+          <div class="card">
+            <div class="title">Audit Logs Imutáveis</div>
+            ${state.auditLogs.slice(0, 12).map(l => `
+              <div class="list-item" style="flex-direction:column;align-items:flex-start;gap:2px">
+                <strong class="mono" style="font-size:11px">${l.time} • ${l.action} (${l.entity})</strong>
+                <span class="sub">${l.detail}</span>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      return `
+        <div class="grid2">
+          <div class="kpi"><div class="sub">Receita / Comissão</div><div class="kpi-v">${fmtAOA(gross)}</div><div class="sub" style="color:var(--emerald)">Comissão: ${fmtAOA(fee)}</div></div>
+          <div class="kpi"><div class="sub">Saldo Cartões</div><div class="kpi-v">${fmtAOA(totalBal)}</div><div class="sub">${state.completedTrips.length} viagens concluídas</div></div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          ${[['overview','Mapa & Inteligência'],['cards','Cartões QR/NFC'],['drivers','Motoristas'],['audit','Audit Logs']].map(([k,l]) => `
+            <button class="chip" style="${state.adminTab===k?'background:var(--emerald);color:#fff;border-color:var(--emerald)':''}" onclick="state.adminTab='${k}';render()">${l}</button>
+          `).join('')}
+        </div>
+        ${body}
+      `;
+    }
+
+    render();
+  </script>
+</body>
+</html>
