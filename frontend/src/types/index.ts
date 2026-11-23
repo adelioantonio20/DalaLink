@@ -1,4 +1,4 @@
-export type UserRole = 'PASSENGER' | 'DRIVER' | 'COMPANY_ADMIN' | 'EMPLOYEE' | 'OWNER' | 'ADMIN';
+export type UserRole = 'PASSENGER' | 'DRIVER' | 'FIELD_COLLECTOR' | 'ADMIN' | 'COMPANY_ADMIN' | 'EMPLOYEE' | 'OWNER';
 
 export interface UserProfile {
   id: number;
@@ -9,126 +9,166 @@ export interface UserProfile {
   is_active: boolean;
   passenger_id?: number;
   default_zone?: string;
-  wallet_balance_aoa?: number;
-  primary_card_code?: string;
   driver_id?: number;
   verification_status?: string;
   rating_avg?: number;
-  company_id?: number;
-  company_name?: string;
 }
 
-export interface LuandaStop {
+export interface MunicipalityDTO {
   id: number;
   name: string;
-  zone_name: string;
+  province: string;
+}
+
+export interface TransportZoneDTO {
+  id: number;
+  name: string;
+  neighborhood: string;
+  municipality: string;
   latitude: number;
   longitude: number;
 }
 
-export interface QuoteResponse {
-  tariff_name: string;
-  distance_km: number;
-  duration_min: number;
-  passenger_count: number;
-  fare_per_passenger_aoa: number;
-  total_fare_aoa: number;
-  currency: string;
+export interface TaxiStopDTO {
+  id: number;
+  zone_id: number;
+  zone_name: string;
+  name: string;
+  landmark?: string;
+  latitude: number;
+  longitude: number;
+  is_validated: boolean;
+  estimated_demand?: number;
+  total_supply?: number;
+  demand_level?: string;
 }
 
-export interface GroupMember {
+export interface GeographyDTO {
+  municipalities: MunicipalityDTO[];
+  neighborhoods: { id: number; name: string; municipality_id: number }[];
+  zones: TransportZoneDTO[];
+  stops: TaxiStopDTO[];
+  routes: {
+    id: number;
+    code: string;
+    name: string;
+    origin_zone: string;
+    destination_zone: string;
+    road_condition: string;
+    corridor_description?: string;
+  }[];
+}
+
+export interface CorridorStatusDTO {
+  route_id?: number | null;
+  route_code?: string;
+  route_name: string;
+  corridor_description?: string;
+  origin_zone: string;
+  destination_zone: string;
+  municipality?: string;
+  neighborhood?: string;
+  origin_lat?: number;
+  origin_lng?: number;
+  destination_lat?: number;
+  destination_lng?: number;
+  has_sufficient_data: boolean;
+  status_message?: string | null;
+  estimated_demand: number;
+  declared_demand: number;
+  confirmed_demand: number;
+  declared_supply: number;
+  observed_supply: number;
+  total_supply: number;
+  demand_supply_ratio?: number | null;
+  ratio_disclaimer: string;
+  demand_level: 'PROCURA_ELEVADA' | 'PROCURA_MODERADA' | 'PROCURA_BAIXA' | 'INSUFFICIENT_DATA';
+  supply_level: 'OFERTA_ELEVADA' | 'OFERTA_MODERADA' | 'OFERTA_REDUZIDA' | 'INSUFFICIENT_DATA';
+  imbalance?: boolean;
+  balance_label: string;
+  driver_advisory: string;
+  passenger_advisory: string;
+  estimated_wait_min?: number | null;
+  road_condition: string;
+  freshness_status: 'RECENT' | 'STALE' | 'EXPIRED';
+  confidence_level: 'HIGH' | 'MEDIUM' | 'LOW';
+  validation_state: string;
+  sources: string[];
+  contains_demo_data: boolean;
+  last_updated_at?: string | null;
+  trend: string;
+  distance_from_origin_km?: number;
+  alternatives?: CorridorStatusDTO[];
+}
+
+export interface IntentionDTO {
   id: number;
-  passenger_name: string;
-  card_code: string;
-  individual_fare_aoa: number;
+  route_id?: number | null;
+  origin_stop_id: number;
+  destination_stop_id: number;
+  origin_zone: string;
+  destination_zone: string;
+  passenger_count: number;
+  status: 'DECLARED' | 'CONFIRMED_AT_STOP' | 'CANCELLED' | 'EXPIRED';
+  source_type: string;
   validation_status: string;
+  confidence_level: string;
+  freshness_status: 'RECENT' | 'STALE' | 'EXPIRED';
+  age_minutes: number;
+  notes?: string | null;
+  is_demo_data: boolean;
+  last_confirmed_at?: string | null;
+  expires_at?: string | null;
+  created_at?: string | null;
 }
 
-export interface TransportRequestDTO {
+export interface DriverReportDTO {
   id: number;
-  passenger_id: number;
-  passenger_name: string;
-  passenger_phone?: string;
-  company_id?: number;
-  request_type: 'INDIVIDUAL' | 'GROUP' | 'CORPORATE';
-  pickup_label: string;
-  pickup_zone: string;
-  pickup_lat: number;
-  pickup_lng: number;
-  dropoff_label: string;
-  dropoff_zone: string;
-  dropoff_lat: number;
-  dropoff_lng: number;
-  passenger_count: number;
-  estimated_distance_km: number;
-  estimated_duration_min: number;
-  fare_per_passenger_aoa: number;
-  estimated_total_fare_aoa: number;
-  status: string;
-  offered_driver_id?: number;
-  offer_expires_at?: string;
-  group_members: GroupMember[];
-  created_at?: string;
+  origin_zone: string;
+  destination_zone: string;
+  availability_status: 'AVAILABLE' | 'AT_STOP' | 'EN_ROUTE' | 'UNAVAILABLE';
+  estimated_seats: number;
+  freshness_status: 'RECENT' | 'STALE' | 'EXPIRED';
+  age_minutes: number;
+  last_confirmed_at: string;
+  expires_at: string;
 }
 
-export interface BoardedPassenger {
-  id: number;
-  passenger_name: string;
-  card_code: string;
-  fare_charged_aoa: number;
-  boarding_status: string;
-  boarded_at?: string;
-  card_transaction_id?: number;
+export interface DriverInfoOverviewDTO {
+  safety_notice: string;
+  my_report: DriverReportDTO | null;
+  routes: CorridorStatusDTO[];
+  top_destinations: {
+    destination: string;
+    estimated_demand: number;
+    total_supply: number;
+    routes_count: number;
+  }[];
+  peak_hours: { hour: string; passengers: number }[];
+  server_time_luanda: string;
 }
 
-export interface TripDTO {
-  id: number;
-  transport_request_id: number;
-  status: 'DRIVER_EN_ROUTE' | 'DRIVER_ARRIVED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
-  boarding_code: string;
-  eta_minutes: number;
-  fare_per_passenger_aoa: number;
-  total_fare_aoa: number;
-  paid_total_aoa: number;
-  request?: TransportRequestDTO;
-  driver?: {
-    id: number;
-    full_name: string;
-    phone?: string;
-    rating_avg: number;
-    total_trips: number;
-    current_lat?: number;
-    current_lng?: number;
-    current_zone?: string;
+export interface HistoricalAnalyticsDTO {
+  demand_by_municipality: { name: string; passengers: number }[];
+  demand_by_neighborhood: { name: string; passengers: number }[];
+  demand_by_stop: { name: string; passengers: number }[];
+  demand_by_destination: { name: string; passengers: number }[];
+  demand_by_weekday: { day: string; passengers: number }[];
+  demand_by_hour: { hour: string; passengers: number }[];
+  avg_wait_min?: number | null;
+  unmet_or_cancelled_intentions: number;
+  data_quality: {
+    total_records: number;
+    validated_pct: number;
+    stale_or_expired_pct: number;
+    pending_validations: number;
+    suspicious_records: number;
   };
-  vehicle?: {
-    id: number;
-    make: string;
-    model: string;
-    year: number;
-    color: string;
-    license_plate: string;
-    vehicle_type: string;
-    capacity: number;
-  };
-  boarded_passengers: BoardedPassenger[];
-  boarded_count: number;
-  commission?: {
-    gross_fare_aoa: number;
-    platform_fee_aoa: number;
-    driver_net_aoa: number;
-    commission_rate: number;
-  };
-  rating?: {
-    score: number;
-    comment?: string;
-  };
-  accepted_at?: string;
-  arrived_at?: string;
-  started_at?: string;
-  completed_at?: string;
+  snapshots_count: number;
+  predictive_model_note: string;
 }
 
+// Preserved legacy DTOs (disabled in active MVP per Section 3 & 14)
 export interface TransportCardDTO {
   id: number;
   card_code: string;
@@ -145,38 +185,22 @@ export interface TransportCardDTO {
   issued_at?: string;
 }
 
-export interface CardTransactionDTO {
+export interface TransportRequestDTO {
   id: number;
-  card_code?: string;
-  trip_id?: number;
-  tx_type: 'TOPUP_ADMIN' | 'TRIP_DEBIT' | 'REFUND' | 'ADJUSTMENT';
-  amount_aoa: number;
-  balance_before_aoa: number;
-  balance_after_aoa: number;
+  pickup_zone: string;
+  dropoff_zone: string;
+  dropoff_lat: number;
+  dropoff_lng: number;
+  passenger_count: number;
+  estimated_total_fare_aoa: number;
   status: string;
-  description: string;
-  idempotency_key: string;
   created_at?: string;
 }
 
-export interface DemandPressureZone {
-  zone: string;
-  latitude: number;
-  longitude: number;
-  active_requests: number;
-  historical_requests: number;
-  unmet_or_cancelled: number;
-  available_vehicles: number;
-  pressure_ratio: number;
-  pressure_level: 'ELEVADA' | 'MODERADA' | 'BAIXA';
-  recommendation: string;
-}
-
-export interface NotificationDTO {
+export interface TripDTO {
   id: number;
-  title: string;
-  message: string;
-  category: string;
-  is_read: boolean;
-  created_at?: string;
+  status: string;
+  paid_total_aoa: number;
+  total_fare_aoa: number;
 }
+

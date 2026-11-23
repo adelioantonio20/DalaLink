@@ -4,8 +4,6 @@ import { AuthPortal } from './apps/auth/AuthPortal';
 import { PassengerApp } from './apps/passenger/PassengerApp';
 import { DriverApp } from './apps/driver/DriverApp';
 import { AdminDashboard } from './apps/admin/AdminDashboard';
-import { CorporatePortal } from './apps/corporate/CorporatePortal';
-import { OwnerPortal } from './apps/owner/OwnerPortal';
 
 const PortalRouter: React.FC = () => {
   const { user, loading } = useAuth();
@@ -22,16 +20,14 @@ const PortalRouter: React.FC = () => {
     return <AuthPortal />;
   }
 
+  // Active MVP environments: Passenger, Driver, and Admin/Field Collector.
+  // Legacy financial/corporate/owner portals are preserved in repo but excluded from active MVP navigation.
   switch (user.role) {
     case 'DRIVER':
       return <DriverApp />;
     case 'ADMIN':
+    case 'FIELD_COLLECTOR':
       return <AdminDashboard />;
-    case 'OWNER':
-      return <OwnerPortal />;
-    case 'COMPANY_ADMIN':
-    case 'EMPLOYEE':
-      return <CorporatePortal />;
     case 'PASSENGER':
     default:
       return <PassengerApp />;

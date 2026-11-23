@@ -10,6 +10,9 @@ from app.models.identity import Driver, Passenger, User
 from app.models.mobility import GroupPassenger, GroupRequest, Rating, TransportRequest, Trip, TripPassenger
 
 
+from app.core.config import settings
+
+
 def serialize_user(db: Session, user: User) -> dict:
     data: dict = {
         "id": user.id,
@@ -21,16 +24,17 @@ def serialize_user(db: Session, user: User) -> dict:
         "created_at": user.created_at.isoformat() if user.created_at else None,
     }
     if user.role == "PASSENGER" and user.passenger:
-        wallet = db.scalar(select(Wallet).where(Wallet.passenger_id == user.passenger.id))
-        cards = (
-            db.scalars(select(TransportCard).where(TransportCard.wallet_id == wallet.id)).all()
-            if wallet
-            else []
-        )
         data["passenger_id"] = user.passenger.id
         data["default_zone"] = user.passenger.default_zone
-        data["wallet_balance_aoa"] = float(wallet.balance_aoa) if wallet else 0.0
-        data["primary_card_code"] = cards[0].card_code if cards else None
+        if settings.ENABLE_LEGACY_FINANCE_MODULES:
+            wallet = db.scalar(select(Wallet).where(Wallet.passenger_id == user.passenger.id))
+            cards = (
+                db.scalars(select(TransportCard).where(TransportCard.wallet_id == wallet.id)).all()
+                if wallet
+                else []
+            )
+            data["wallet_balance_aoa"] = float(wallet.balance_aoa) if wallet else 0.0
+            data["primary_card_code"] = cards[0].card_code if cards else None
     elif user.role == "DRIVER" and user.driver:
         data["driver_id"] = user.driver.id
         data["verification_status"] = user.driver.verification_status

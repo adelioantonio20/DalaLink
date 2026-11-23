@@ -1,236 +1,136 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Activity,
-  Ban,
   BarChart3,
-  Car,
   CheckCircle2,
-  CreditCard,
-  FileSearch,
-  Filter,
-  Link2,
+  ClipboardCheck,
+  Clock,
   Map as MapIcon,
-  PlusCircle,
+  MapPin,
+  Plus,
   RefreshCw,
-  RotateCcw,
+  Settings,
   ShieldCheck,
-  TrendingUp,
-  Wallet,
-  Wifi,
+  Users,
+  XCircle,
 } from 'lucide-react';
 import { DemandCircleItem, LuandaMap, MapMarkerItem } from '../../components/LuandaMap';
 import { TopBar } from '../../components/TopBar';
 import { useAuth } from '../../contexts/AuthContext';
-import { apiRequest, formatAOA, formatLuandaTime } from '../../services/api';
+import { apiRequest, formatLuandaTime } from '../../services/api';
 import {
-  CardTransactionDTO,
-  DemandPressureZone,
-  LuandaStop,
-  TransportCardDTO,
-  TransportRequestDTO,
-  TripDTO,
+  CorridorStatusDTO,
+  GeographyDTO,
+  HistoricalAnalyticsDTO,
+  IntentionDTO,
 } from '../../types';
 
-interface AdminOverviewDTO {
+interface AdminInfoDashboardDTO {
   kpis: {
-    passengers_registered: number;
-    drivers_registered: number;
-    drivers_approved: number;
-    drivers_pending_verification: number;
-    active_vehicles: number;
-    available_vehicles: number;
-    pending_requests: number;
-    active_trips: number;
-    completed_trips: number;
-    cancelled_requests: number;
-    gross_revenue_aoa: number;
-    platform_commissions_aoa: number;
-    total_cards_balance_aoa: number;
-    active_cards: number;
-    blocked_cards: number;
-    partner_companies: number;
+    active_passengers: number;
+    active_drivers: number;
+    active_intentions_count: number;
+    declared_waiting_passengers: number;
+    confirmed_passengers: number;
+    available_drivers: number;
+    validated_data_pct: number;
+    stale_or_expired_pct: number;
+    pending_validations: number;
+    suspicious_records: number;
   };
-  map_data: {
-    vehicles: {
-      driver_id: number;
-      driver_name: string;
-      verification_status: string;
-      status: string;
-      latitude: number;
-      longitude: number;
-      zone: string;
-      vehicle_label: string;
-      capacity: number;
-    }[];
-    pending_requests: TransportRequestDTO[];
-    active_trips: TripDTO[];
-    stops: LuandaStop[];
-  };
-  demand_pressure: DemandPressureZone[];
-}
-
-interface MobilityIntelligenceDTO {
-  summary: {
-    total_requests_analyzed: number;
-    total_trips_completed: number;
-    avg_wait_time_min: number;
-    unmet_demand_rate_pct: number;
-    peak_hour_luanda: string;
-    high_pressure_zones: number;
-  };
-  forecast_model_status: {
-    mode: string;
-    sample_trips: number;
-    required_trips_for_ml: number;
-    note: string;
-  };
-  zones: (DemandPressureZone & {
-    congestion_index: number;
-    estimated_wait_min: number;
-    unmet_rate_pct: number;
-    busy_vehicles: number;
-  })[];
-  hourly_distribution: { hour: string; requests: number }[];
-  top_corridors: {
-    origin: string;
-    destination: string;
-    requests_count: number;
-    total_passengers: number;
-    avg_fare_aoa: number;
-    total_volume_aoa: number;
+  routes: CorridorStatusDTO[];
+  analytics: HistoricalAnalyticsDTO;
+  demand_observations: {
+    id: number;
+    origin_zone: string;
+    destination_zone: string;
+    observed_passengers_count: number;
+    estimated_wait_min?: number;
+    validation_status: string;
+    freshness_status: string;
+    notes?: string;
+    is_demo_data: boolean;
+    observed_at?: string;
   }[];
-  repositioning_recommendations: {
-    from_zone: string;
-    to_zone: string;
-    priority: string;
-    reason: string;
+  supply_observations: {
+    id: number;
+    origin_zone: string;
+    destination_zone: string;
+    observed_taxis_count: number;
+    road_condition: string;
+    validation_status: string;
+    freshness_status: string;
+    notes?: string;
+    is_demo_data: boolean;
+    observed_at?: string;
   }[];
-}
-
-interface IntegrationAdapterRow {
-  provider_code: string;
-  display_name: string;
-  category: string;
-  status: string;
-  supports_qr: boolean;
-  supports_nfc: boolean;
-  cost_tier: string;
-  notes: string;
-}
-
-interface AdminDriverRow {
-  id: number;
-  full_name: string;
-  email: string;
-  phone: string;
-  license_number: string;
-  national_id: string;
-  verification_status: string;
-  verification_notes?: string;
-  rating_avg: number;
-  total_trips: number;
-  operational_status: string;
-  current_zone?: string;
-  vehicle?: {
-    make: string;
-    model: string;
-    license_plate: string;
-    capacity: number;
-    color: string;
-  };
-}
-
-interface AdminPassengerRow {
-  id: number;
-  full_name: string;
-  email: string;
-  balance_aoa: number;
-}
-
-interface AuditLogRow {
-  id: number;
-  actor_user_id?: number;
-  action: string;
-  entity_type: string;
-  entity_id?: string;
-  details_json: string;
-  created_at: string;
+  active_intentions: IntentionDTO[];
+  configs: { key: string; value: string; description: string }[];
+  users: { id: number; full_name: string; email: string; phone: string; role: string; is_active: boolean }[];
+  audit_logs: { id: number; action: string; entity_type: string; entity_id?: string; details_json: string; created_at?: string }[];
 }
 
 export const AdminDashboard: React.FC = () => {
-  const { lastEvent } = useAuth();
-  const [tab, setTab] = useState<'overview' | 'intelligence' | 'drivers' | 'cards' | 'trips' | 'audit'>('overview');
-  const [zoneFilter, setZoneFilter] = useState<string>('');
-  const [tripStatusFilter, setTripStatusFilter] = useState<string>('');
-  const [dateFrom, setDateFrom] = useState<string>('');
-  const [dateTo, setDateTo] = useState<string>('');
+  const { user, lastEvent } = useAuth();
+  const isFieldOnly = user?.role === 'FIELD_COLLECTOR';
 
-  const [overview, setOverview] = useState<AdminOverviewDTO | null>(null);
-  const [intelligence, setIntelligence] = useState<MobilityIntelligenceDTO | null>(null);
-  const [integrations, setIntegrations] = useState<IntegrationAdapterRow[]>([]);
-  const [drivers, setDrivers] = useState<AdminDriverRow[]>([]);
-  const [passengers, setPassengers] = useState<AdminPassengerRow[]>([]);
-  const [cardsData, setCardsData] = useState<{
-    cards: TransportCardDTO[];
-    recent_transactions: CardTransactionDTO[];
-  } | null>(null);
-  const [trips, setTrips] = useState<TripDTO[]>([]);
-  const [auditLogs, setAuditLogs] = useState<AuditLogRow[]>([]);
-
-  const [topupCard, setTopupCard] = useState('MOB-000001');
-  const [topupAmount, setTopupAmount] = useState('5000');
-  const [topupDesc, setTopupDesc] = useState('Carregamento administrativo em posto DalaLink');
-
-  const [issuePassengerId, setIssuePassengerId] = useState<number>(1);
-  const [issueInitialBalance, setIssueInitialBalance] = useState('2000');
-  const [issueNfcUid, setIssueNfcUid] = useState('');
-
+  const [tab, setTab] = useState<'dashboard' | 'map' | 'geo' | 'field' | 'quality' | 'reports' | 'config'>(
+    isFieldOnly ? 'field' : 'dashboard'
+  );
+  const [geo, setGeo] = useState<GeographyDTO | null>(null);
+  const [data, setData] = useState<AdminInfoDashboardDTO | null>(null);
   const [busy, setBusy] = useState(false);
   const [banner, setBanner] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
 
+  // Field observation form
+  const [obsForm, setObsForm] = useState({
+    origin_zone: 'Gamek',
+    destination_zone: 'Maianga',
+    observed_taxis_count: 15,
+    observed_passengers_count: 32,
+    estimated_wait_min: 12,
+    road_condition: 'MODERATE_TRAFFIC',
+    notes: 'Observação presencial na paragem principal',
+  });
+
+  // Stop & Route creation forms
+  const [stopForm, setStopForm] = useState({
+    zone_id: 1,
+    name: '',
+    landmark: '',
+    latitude: -8.86,
+    longitude: 13.22,
+  });
+
+  const [configDraft, setConfigDraft] = useState<Record<string, string>>({});
+
   const loadAll = useCallback(async () => {
     try {
-      const ovUrl = zoneFilter ? `/admin/overview?zone=${encodeURIComponent(zoneFilter)}` : '/admin/overview';
-      const intelUrl = zoneFilter
-        ? `/admin/intelligence?zone=${encodeURIComponent(zoneFilter)}`
-        : '/admin/intelligence';
-
-      const tripsParams = new URLSearchParams();
-      if (zoneFilter) tripsParams.set('zone', zoneFilter);
-      if (tripStatusFilter) tripsParams.set('status_filter', tripStatusFilter);
-      if (dateFrom) tripsParams.set('date_from', dateFrom);
-      if (dateTo) tripsParams.set('date_to', `${dateTo}T23:59:59`);
-      const tripsUrl = `/admin/trips${tripsParams.toString() ? `?${tripsParams}` : ''}`;
-
-      const [ovRes, intelRes, integRes, drvRes, passRes, cardsRes, tripsRes, logsRes] = await Promise.all([
-        apiRequest<AdminOverviewDTO>(ovUrl),
-        apiRequest<MobilityIntelligenceDTO>(intelUrl),
-        apiRequest<{ integrations: IntegrationAdapterRow[] }>('/admin/integrations'),
-        apiRequest<AdminDriverRow[]>('/admin/drivers'),
-        apiRequest<AdminPassengerRow[]>('/admin/passengers'),
-        apiRequest<{ cards: TransportCardDTO[]; recent_transactions: CardTransactionDTO[] }>('/admin/cards'),
-        apiRequest<TripDTO[]>(tripsUrl),
-        apiRequest<AuditLogRow[]>('/admin/audit-logs?limit=50'),
+      const [geoRes, dashRes] = await Promise.all([
+        apiRequest<GeographyDTO>('/info/geography'),
+        apiRequest<AdminInfoDashboardDTO>('/info/admin/dashboard'),
       ]);
-      setOverview(ovRes);
-      setIntelligence(intelRes);
-      setIntegrations(integRes.integrations);
-      setDrivers(drvRes);
-      setPassengers(passRes);
-      if (passRes.length > 0 && !passRes.some((p) => p.id === issuePassengerId)) {
-        setIssuePassengerId(passRes[0].id);
+      setGeo(geoRes);
+      setData(dashRes);
+      if (geoRes.zones.length > 0 && !geoRes.zones.some((z) => z.id === stopForm.zone_id)) {
+        setStopForm((p) => ({ ...p, zone_id: geoRes.zones[0].id }));
       }
-      setCardsData(cardsRes);
-      setTrips(tripsRes);
-      setAuditLogs(logsRes);
+      setConfigDraft((prev) => {
+        if (Object.keys(prev).length > 0) return prev;
+        const map: Record<string, string> = {};
+        dashRes.configs.forEach((c) => {
+          map[c.key] = c.value;
+        });
+        return map;
+      });
     } catch {
-      // ignore transient errors
+      // ignore transient error
     }
-  }, [zoneFilter, tripStatusFilter, dateFrom, dateTo, issuePassengerId]);
+  }, [stopForm.zone_id]);
 
   useEffect(() => {
     loadAll();
-    const timer = window.setInterval(loadAll, 7000);
+    const timer = window.setInterval(loadAll, 12000);
     return () => window.clearInterval(timer);
   }, [loadAll]);
 
@@ -238,21 +138,36 @@ export const AdminDashboard: React.FC = () => {
     if (lastEvent) loadAll();
   }, [lastEvent, loadAll]);
 
-  const handleVerifyDriver = async (driverId: number, status: 'APPROVED' | 'REJECTED' | 'SUSPENDED') => {
+  const handleRecordObservation = async (e: React.FormEvent) => {
+    e.preventDefault();
     setBusy(true);
     setBanner(null);
     try {
-      await apiRequest(`/admin/drivers/${driverId}/verify`, {
+      const res = await apiRequest<{ validation_status: string }>('/info/observations/field', {
         method: 'POST',
-        body: JSON.stringify({
-          verification_status: status,
-          notes:
-            status === 'APPROVED'
-              ? 'Documentação validada pela administração DalaLink.'
-              : `Estado atualizado para ${status} pela administração.`,
-        }),
+        body: JSON.stringify({ ...obsForm, auto_validate: user?.role === 'ADMIN' }),
       });
-      setBanner({ type: 'ok', text: `Motorista #${driverId} atualizado para ${status}.` });
+      setBanner({
+        type: 'ok',
+        text: `Observação presencial registada (${obsForm.origin_zone} → ${obsForm.destination_zone}: ${obsForm.observed_taxis_count} táxis, ${obsForm.observed_passengers_count} pass.) • Estado: ${res.validation_status}.`,
+      });
+      await loadAll();
+    } catch (err) {
+      setBanner({ type: 'err', text: err instanceof Error ? err.message : 'Erro ao registar observação.' });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleValidationDecision = async (targetType: string, targetId: number, decision: string) => {
+    setBusy(true);
+    setBanner(null);
+    try {
+      await apiRequest(`/info/admin/validations/${targetType}/${targetId}`, {
+        method: 'POST',
+        body: JSON.stringify({ decision, reason: `Decisão administrativa: ${decision}` }),
+      });
+      setBanner({ type: 'ok', text: `Registo ${targetType} #${targetId} marcado como ${decision}.` });
       await loadAll();
     } catch (err) {
       setBanner({ type: 'err', text: err instanceof Error ? err.message : 'Erro na validação.' });
@@ -261,195 +176,108 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
-  const handleTopup = async (e: React.FormEvent) => {
+  const handleCreateStop = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
     setBanner(null);
     try {
-      const tx = await apiRequest<CardTransactionDTO>('/admin/cards/topup', {
+      await apiRequest('/info/admin/stops', {
         method: 'POST',
-        body: JSON.stringify({
-          card_code: topupCard,
-          amount_aoa: Number(topupAmount),
-          description: topupDesc,
-        }),
+        body: JSON.stringify(stopForm),
       });
-      setBanner({
-        type: 'ok',
-        text: `Cartão ${tx.card_code} carregado com ${formatAOA(tx.amount_aoa)}. Novo saldo: ${formatAOA(tx.balance_after_aoa)}.`,
-      });
+      setStopForm({ ...stopForm, name: '', landmark: '' });
+      setBanner({ type: 'ok', text: 'Nova paragem validada e adicionada ao mapa de Luanda.' });
       await loadAll();
     } catch (err) {
-      setBanner({ type: 'err', text: err instanceof Error ? err.message : 'Erro no carregamento.' });
+      setBanner({ type: 'err', text: err instanceof Error ? err.message : 'Erro ao criar paragem.' });
     } finally {
       setBusy(false);
     }
   };
 
-  const handleIssueCard = async (e: React.FormEvent) => {
+  const handleSaveConfig = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
     setBanner(null);
     try {
-      const created = await apiRequest<TransportCardDTO>('/admin/cards/issue', {
-        method: 'POST',
-        body: JSON.stringify({
-          passenger_id: issuePassengerId,
-          initial_balance_aoa: Number(issueInitialBalance || 0),
-          nfc_uid: issueNfcUid.trim() || undefined,
-        }),
-      });
-      setIssueNfcUid('');
-      setBanner({
-        type: 'ok',
-        text: `Novo cartão ${created.card_code} emitido para ${created.passenger_name} (${created.card_technology}).`,
-      });
-      await loadAll();
-    } catch (err) {
-      setBanner({ type: 'err', text: err instanceof Error ? err.message : 'Erro ao emitir cartão.' });
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const handleBindNfcQuick = async (cardCode: string) => {
-    const uid = `NFC-AO-${cardCode.replace('MOB-', '')}`;
-    setBusy(true);
-    setBanner(null);
-    try {
-      await apiRequest(`/admin/cards/${encodeURIComponent(cardCode)}/nfc`, {
+      await apiRequest('/info/admin/config', {
         method: 'PUT',
-        body: JSON.stringify({ nfc_uid: uid, card_technology: 'QR+NFC' }),
+        body: JSON.stringify({ updates: configDraft }),
       });
-      setBanner({ type: 'ok', text: `NFC ${uid} associado ao cartão ${cardCode} (modo QR+NFC ativo).` });
+      setBanner({ type: 'ok', text: 'Limites de procura/oferta e janelas de expiração actualizados.' });
       await loadAll();
     } catch (err) {
-      setBanner({ type: 'err', text: err instanceof Error ? err.message : 'Erro ao associar NFC.' });
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const handleCardStatus = async (cardCode: string, nextStatus: 'ACTIVE' | 'BLOCKED') => {
-    setBusy(true);
-    setBanner(null);
-    try {
-      await apiRequest(`/admin/cards/${encodeURIComponent(cardCode)}/status`, {
-        method: 'PUT',
-        body: JSON.stringify({
-          status: nextStatus,
-          reason: nextStatus === 'BLOCKED' ? 'Bloqueio preventivo administrativo' : 'Reativação administrativa',
-        }),
-      });
-      setBanner({ type: 'ok', text: `Cartão ${cardCode} alterado para ${nextStatus}.` });
-      await loadAll();
-    } catch (err) {
-      setBanner({ type: 'err', text: err instanceof Error ? err.message : 'Erro ao alterar cartão.' });
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const handleRefund = async (txId: number) => {
-    setBusy(true);
-    setBanner(null);
-    try {
-      const tx = await apiRequest<CardTransactionDTO>(`/admin/transactions/${txId}/refund`, {
-        method: 'POST',
-        body: JSON.stringify({ reason: 'Reembolso administrativo autorizado' }),
-      });
-      setBanner({
-        type: 'ok',
-        text: `Reembolso de ${formatAOA(tx.amount_aoa)} creditado no cartão ${tx.card_code}.`,
-      });
-      await loadAll();
-    } catch (err) {
-      setBanner({ type: 'err', text: err instanceof Error ? err.message : 'Erro ao reembolsar.' });
+      setBanner({ type: 'err', text: err instanceof Error ? err.message : 'Erro ao guardar configurações.' });
     } finally {
       setBusy(false);
     }
   };
 
   const mapMarkers: MapMarkerItem[] = useMemo(() => {
-    if (!overview) return [];
-    const items: MapMarkerItem[] = [];
-    overview.map_data.stops.forEach((s) =>
-      items.push({
-        id: `stop-${s.id}`,
-        lat: s.latitude,
-        lng: s.longitude,
-        label: s.zone_name,
-        sublabel: s.name,
-        kind: 'stop',
-      })
-    );
-    overview.map_data.vehicles.forEach((v) =>
-      items.push({
-        id: `veh-${v.driver_id}`,
-        lat: v.latitude,
-        lng: v.longitude,
-        label: v.vehicle_label,
-        sublabel: `${v.driver_name} • ${v.status} • ${v.zone}`,
-        kind: v.status === 'AVAILABLE' ? 'vehicle_available' : 'vehicle_busy',
-      })
-    );
-    overview.map_data.pending_requests.forEach((r) =>
-      items.push({
-        id: `req-${r.id}`,
-        lat: r.pickup_lat,
-        lng: r.pickup_lng,
-        label: `Pedido #${r.id} (${r.pickup_zone} → ${r.dropoff_zone})`,
-        sublabel: `${r.passenger_count} pass. • ${formatAOA(r.estimated_total_fare_aoa)}`,
-        kind: 'request',
-      })
-    );
-    return items;
-  }, [overview]);
+    return (geo?.stops ?? []).map((s) => ({
+      id: `adm-stop-${s.id}`,
+      lat: s.latitude,
+      lng: s.longitude,
+      label: s.name,
+      sublabel: `${s.zone_name} • ${s.is_validated ? 'Paragem Validada' : 'Pendente'}`,
+      kind: 'stop',
+    }));
+  }, [geo]);
 
   const demandCircles: DemandCircleItem[] = useMemo(() => {
-    if (!overview) return [];
-    return overview.demand_pressure.map((z) => ({
-      zone: z.zone,
-      lat: z.latitude,
-      lng: z.longitude,
-      level: z.pressure_level,
-      activeRequests: z.active_requests,
-      availableVehicles: z.available_vehicles,
-    }));
-  }, [overview]);
+    if (!data) return [];
+    const seen = new Set<string>();
+    const out: DemandCircleItem[] = [];
+    data.routes.forEach((r) => {
+      if (!r.origin_lat || !r.origin_lng || seen.has(r.origin_zone)) return;
+      seen.add(r.origin_zone);
+      out.push({
+        zone: r.origin_zone,
+        lat: r.origin_lat,
+        lng: r.origin_lng,
+        level:
+          r.demand_level === 'PROCURA_ELEVADA'
+            ? 'ELEVADA'
+            : r.demand_level === 'PROCURA_MODERADA'
+              ? 'MODERADA'
+              : 'BAIXA',
+        activeRequests: r.estimated_demand,
+        availableVehicles: r.total_supply,
+      });
+    });
+    return out;
+  }, [data]);
 
-  const maxHourly = useMemo(() => {
-    if (!intelligence) return 1;
-    return Math.max(1, ...intelligence.hourly_distribution.map((h) => h.requests));
-  }, [intelligence]);
-
-  const k = overview?.kpis;
+  const k = data?.kpis;
+  const maxHour = useMemo(() => {
+    if (!data) return 1;
+    return Math.max(1, ...data.analytics.demand_by_hour.map((h) => h.passengers));
+  }, [data]);
 
   return (
     <div className="min-h-screen bg-slate-50 pb-16">
       <TopBar />
 
       <main className="mx-auto max-w-7xl space-y-5 px-4 py-5">
-        {/* Control Bar */}
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap gap-1.5 rounded-2xl bg-white p-1.5 shadow-xs ring-1 ring-slate-200">
             {[
-              { id: 'overview', label: 'Mapa & KPIs', icon: MapIcon },
-              { id: 'intelligence', label: 'Inteligência & Heatmap', icon: BarChart3 },
-              { id: 'drivers', label: 'Motoristas', icon: Car },
-              { id: 'cards', label: 'Cartões QR/NFC', icon: CreditCard },
-              { id: 'trips', label: 'Viagens', icon: Activity },
-              { id: 'audit', label: 'Auditoria & Integrações', icon: FileSearch },
+              { id: 'dashboard', label: 'Dashboard', icon: Activity },
+              { id: 'map', label: 'Mapa Operacional', icon: MapIcon },
+              { id: 'field', label: 'Recolha de Campo', icon: ClipboardCheck },
+              { id: 'quality', label: 'Qualidade dos Dados', icon: ShieldCheck },
+              { id: 'geo', label: 'Paragens & Vias', icon: MapPin },
+              { id: 'reports', label: 'Relatórios Históricos', icon: BarChart3 },
+              { id: 'config', label: 'Configurações', icon: Settings },
             ].map((item) => {
               const Icon = item.icon;
-              const active = tab === item.id;
               return (
                 <button
                   key={item.id}
                   type="button"
                   onClick={() => setTab(item.id as typeof tab)}
                   className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition ${
-                    active ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:bg-slate-100'
+                    tab === item.id ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'
                   }`}
                 >
                   <Icon className="h-4 w-4" />
@@ -458,29 +286,13 @@ export const AdminDashboard: React.FC = () => {
               );
             })}
           </div>
-
-          <div className="flex items-center gap-2">
-            <div className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs">
-              <Filter className="h-3.5 w-3.5 text-slate-400" />
-              <select
-                value={zoneFilter}
-                onChange={(e) => setZoneFilter(e.target.value)}
-                className="bg-transparent font-semibold text-slate-700 focus:outline-none"
-              >
-                <option value="">Todas as Zonas de Luanda</option>
-                {overview?.demand_pressure.map((z) => (
-                  <option key={z.zone} value={z.zone}>{z.zone}</option>
-                ))}
-              </select>
-            </div>
-            <button
-              type="button"
-              onClick={loadAll}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-700 px-3.5 py-2 text-xs font-bold text-white hover:bg-emerald-800"
-            >
-              <RefreshCw className="h-3.5 w-3.5" /> Atualizar
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={loadAll}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-700 px-3.5 py-2 text-xs font-bold text-white hover:bg-emerald-800"
+          >
+            <RefreshCw className="h-3.5 w-3.5" /> Actualizar
+          </button>
         </div>
 
         {banner && (
@@ -496,112 +308,100 @@ export const AdminDashboard: React.FC = () => {
           </div>
         )}
 
-        {/* KPI GRID */}
+        {/* Section 8 KPIs */}
         {k && (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-2xl border border-slate-200 bg-white p-4">
               <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
-                <span>Receita Bruta & Comissões</span>
-                <Wallet className="h-4 w-4 text-emerald-700" />
+                <span>Utilizadores Activos</span>
+                <Users className="h-4 w-4 text-emerald-700" />
               </div>
-              <p className="mt-2 text-2xl font-extrabold text-slate-900">{formatAOA(k.gross_revenue_aoa)}</p>
-              <p className="mt-1 text-xs font-semibold text-emerald-700">
-                Comissões plataforma: {formatAOA(k.platform_commissions_aoa)}
+              <p className="mt-1.5 text-2xl font-extrabold text-slate-900">
+                {k.active_passengers} pass. • {k.active_drivers} mot.
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                Motoristas disponíveis agora: <strong>{k.available_drivers}</strong>
               </p>
             </div>
 
             <div className="rounded-2xl border border-slate-200 bg-white p-4">
               <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
-                <span>Operação em Tempo Real</span>
+                <span>Procura em Curso</span>
                 <Activity className="h-4 w-4 text-amber-600" />
               </div>
-              <p className="mt-2 text-2xl font-extrabold text-slate-900">
-                {k.active_trips} em curso • {k.completed_trips} concluídas
+              <p className="mt-1.5 text-2xl font-extrabold text-slate-900">
+                {k.active_intentions_count} intenções ({k.declared_waiting_passengers} p.)
               </p>
-              <p className="mt-1 text-xs text-slate-500">
-                Pendentes: <strong>{k.pending_requests}</strong> • Canceladas: {k.cancelled_requests}
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-slate-200 bg-white p-4">
-              <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
-                <span>Frota & Motoristas</span>
-                <Car className="h-4 w-4 text-slate-700" />
-              </div>
-              <p className="mt-2 text-2xl font-extrabold text-slate-900">
-                {k.available_vehicles}/{k.active_vehicles} livres
-              </p>
-              <p className="mt-1 text-xs text-slate-500">
-                {k.drivers_registered} motoristas ({k.drivers_pending_verification} pendentes) •{' '}
-                {k.passengers_registered} passageiros
+              <p className="mt-1 text-xs text-emerald-700">
+                Confirmados na paragem: <strong>{k.confirmed_passengers}</strong>
               </p>
             </div>
 
             <div className="rounded-2xl border border-slate-200 bg-white p-4">
               <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
-                <span>Cartões QR/NFC & B2B</span>
-                <CreditCard className="h-4 w-4 text-emerald-700" />
+                <span>Qualidade & Validação</span>
+                <ShieldCheck className="h-4 w-4 text-emerald-700" />
               </div>
-              <p className="mt-2 text-2xl font-extrabold text-slate-900">
-                {formatAOA(k.total_cards_balance_aoa)}
-              </p>
+              <p className="mt-1.5 text-2xl font-extrabold text-emerald-700">{k.validated_data_pct}% validados</p>
               <p className="mt-1 text-xs text-slate-500">
-                {k.active_cards} ativos • {k.blocked_cards} bloqueados • {k.partner_companies} empresa(s)
+                Pendentes de validação: <strong>{k.pending_validations}</strong>
               </p>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-4">
+              <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
+                <span>Actualidade dos Dados</span>
+                <Clock className="h-4 w-4 text-amber-600" />
+              </div>
+              <p className="mt-1.5 text-2xl font-extrabold text-amber-700">
+                {k.stale_or_expired_pct}% desact./exp.
+              </p>
+              <p className="mt-1 text-xs text-slate-500">Registos suspeitos: {k.suspicious_records}</p>
             </div>
           </div>
         )}
 
-        {/* TAB 1: OVERVIEW MAP */}
-        {tab === 'overview' && overview && (
+        {/* TAB 1: DASHBOARD */}
+        {tab === 'dashboard' && data && (
           <div className="grid gap-5 lg:grid-cols-12">
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 lg:col-span-8">
-              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                <h2 className="text-sm font-bold text-slate-900">
-                  Mapa Operacional de Luanda (Frota, Pedidos, Paragens e Pressão)
-                </h2>
-                <div className="flex flex-wrap gap-2 text-[11px] font-semibold text-slate-600">
-                  <span className="inline-flex items-center gap-1">
-                    <span className="h-2.5 w-2.5 rounded-full bg-emerald-600" /> Livre
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <span className="h-2.5 w-2.5 rounded-full bg-slate-900" /> Em viagem
-                  </span>
-                  <span className="inline-flex items-center gap-1">
-                    <span className="h-2.5 w-2.5 rounded-full bg-red-600" /> Procura / Pressão
-                  </span>
-                </div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 lg:col-span-7">
+              <h2 className="mb-3 text-sm font-bold text-slate-900">
+                Estado em Tempo Real das Vias de Luanda
+              </h2>
+              <div className="divide-y divide-slate-100">
+                {data.routes.map((r) => (
+                  <div key={r.route_name} className="flex flex-wrap items-center justify-between gap-2 py-2.5 text-xs">
+                    <div>
+                      <p className="font-bold text-slate-900">{r.route_name}</p>
+                      <p className="text-[11px] text-slate-500">
+                        {r.has_sufficient_data
+                          ? `Procura: ${r.estimated_demand} (${r.confirmed_demand} conf.) • Oferta: ${r.total_supply} (${r.observed_supply} obs.)`
+                          : r.status_message}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-700">
+                        {r.demand_level} • {r.freshness_status}
+                      </span>
+                      <p className="mt-0.5 text-[10px] text-slate-400">
+                        {formatLuandaTime(r.last_updated_at)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <LuandaMap heightClass="h-[430px]" zoom={12} markers={mapMarkers} demandCircles={demandCircles} />
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 lg:col-span-4">
-              <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500">
-                <TrendingUp className="h-4 w-4 text-amber-600" />
-                Pressão de Procura por Zona
-              </div>
-              <div className="max-h-[400px] space-y-2.5 overflow-y-auto pr-1">
-                {overview.demand_pressure.map((z) => (
-                  <div key={z.zone} className="rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs">
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-900">{z.zone}</span>
-                      <span
-                        className={`rounded-full px-2.5 py-0.5 text-[10px] font-extrabold ${
-                          z.pressure_level === 'ELEVADA'
-                            ? 'bg-red-100 text-red-700'
-                            : z.pressure_level === 'MODERADA'
-                              ? 'bg-amber-100 text-amber-800'
-                              : 'bg-emerald-100 text-emerald-800'
-                        }`}
-                      >
-                        {z.pressure_level}
-                      </span>
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 lg:col-span-5">
+              <h2 className="mb-3 text-sm font-bold text-slate-900">Registo de Auditoria</h2>
+              <div className="max-h-96 divide-y divide-slate-100 overflow-y-auto pr-1">
+                {data.audit_logs.map((l) => (
+                  <div key={l.id} className="py-2 text-xs">
+                    <div className="flex justify-between">
+                      <span className="font-mono-code font-bold text-slate-900">{l.action}</span>
+                      <span className="text-[10px] text-slate-400">{formatLuandaTime(l.created_at)}</span>
                     </div>
-                    <p className="mt-1 text-slate-600">
-                      Procura: <strong>{z.active_requests}</strong> • Livres: <strong>{z.available_vehicles}</strong> •
-                      Hist.: {z.historical_requests}
-                    </p>
-                    <p className="mt-1 text-[11px] text-slate-500">{z.recommendation}</p>
+                    <p className="font-mono-code text-[11px] text-slate-500">{l.details_json}</p>
                   </div>
                 ))}
               </div>
@@ -609,560 +409,368 @@ export const AdminDashboard: React.FC = () => {
           </div>
         )}
 
-        {/* TAB 2: PHASE 3 MOBILITY INTELLIGENCE & HEATMAP */}
-        {tab === 'intelligence' && intelligence && (
-          <div className="space-y-5">
-            <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 text-xs text-emerald-950">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <strong className="uppercase tracking-wider">Motor de Inteligência de Mobilidade:</strong>{' '}
-                  <span className="font-mono-code font-bold">{intelligence.forecast_model_status.mode}</span>
-                  <p className="mt-0.5 text-emerald-900">{intelligence.forecast_model_status.note}</p>
-                </div>
-                <div className="text-right font-mono-code text-xs font-bold">
-                  Amostra real: {intelligence.forecast_model_status.sample_trips} /{' '}
-                  {intelligence.forecast_model_status.required_trips_for_ml} viagens
-                </div>
-              </div>
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-4">
-              <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                <p className="text-xs text-slate-500">Tempo Médio de Espera</p>
-                <p className="mt-1 text-2xl font-extrabold text-slate-900">
-                  {intelligence.summary.avg_wait_time_min} min
-                </p>
-              </div>
-              <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                <p className="text-xs text-slate-500">Taxa Não Atendida / Cancel.</p>
-                <p className="mt-1 text-2xl font-extrabold text-amber-700">
-                  {intelligence.summary.unmet_demand_rate_pct}%
-                </p>
-              </div>
-              <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                <p className="text-xs text-slate-500">Hora de Ponta (Luanda)</p>
-                <p className="mt-1 text-2xl font-extrabold text-emerald-700">
-                  {intelligence.summary.peak_hour_luanda}
-                </p>
-              </div>
-              <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                <p className="text-xs text-slate-500">Zonas de Pressão Elevada</p>
-                <p className="mt-1 text-2xl font-extrabold text-red-600">
-                  {intelligence.summary.high_pressure_zones}
-                </p>
-              </div>
-            </div>
-
-            <div className="grid gap-5 lg:grid-cols-12">
-              {/* Hourly Demand Bar Chart */}
-              <div className="rounded-2xl border border-slate-200 bg-white p-5 lg:col-span-7">
-                <h2 className="mb-4 text-sm font-bold text-slate-900">
-                  Distribuição Horária da Procura (Africa/Luanda — 00h às 23h)
-                </h2>
-                <div className="flex h-44 items-end gap-1.5 border-b border-slate-200 pb-2">
-                  {intelligence.hourly_distribution.map((h) => {
-                    const pct = Math.max(6, Math.round((h.requests / maxHourly) * 100));
-                    return (
-                      <div key={h.hour} className="group flex flex-1 flex-col items-center gap-1">
-                        <span className="text-[9px] font-bold text-slate-500 opacity-0 transition group-hover:opacity-100">
-                          {h.requests}
-                        </span>
-                        <div
-                          className={`w-full rounded-t-md transition ${
-                            h.requests > 0 ? 'bg-emerald-600 group-hover:bg-amber-500' : 'bg-slate-200'
-                          }`}
-                          style={{ height: `${h.requests > 0 ? pct : 6}%` }}
-                          title={`${h.hour}: ${h.requests} solicitações`}
-                        />
-                        <span className="text-[9px] text-slate-400">{h.hour.replace('h', '')}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <h3 className="mb-2 mt-5 text-xs font-bold uppercase tracking-wider text-slate-500">
-                  Principais Corredores Origem → Destino
-                </h3>
-                {intelligence.top_corridors.length === 0 ? (
-                  <p className="text-xs text-slate-500">Sem pedidos registados ainda para análise de corredores.</p>
-                ) : (
-                  <div className="divide-y divide-slate-100">
-                    {intelligence.top_corridors.map((c) => (
-                      <div key={`${c.origin}-${c.destination}`} className="flex items-center justify-between py-2 text-xs">
-                        <span className="font-bold text-slate-900">
-                          {c.origin} → {c.destination}
-                        </span>
-                        <span className="text-slate-600">
-                          <strong>{c.requests_count}</strong> pedidos ({c.total_passengers} pass.) • Média{' '}
-                          <strong className="text-emerald-700">{formatAOA(c.avg_fare_aoa)}</strong>
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Congestion & Repositioning Recommendations */}
-              <div className="space-y-4 lg:col-span-5">
-                <div className="rounded-2xl border border-slate-200 bg-white p-5">
-                  <h2 className="mb-3 text-sm font-bold text-slate-900">
-                    Recomendações Operacionais de Reposicionamento
-                  </h2>
-                  {intelligence.repositioning_recommendations.length === 0 ? (
-                    <p className="text-xs text-slate-500">
-                      Equilíbrio estável entre oferta e procura em todas as zonas de Luanda neste momento.
-                    </p>
-                  ) : (
-                    <div className="space-y-2">
-                      {intelligence.repositioning_recommendations.map((rec, idx) => (
-                        <div key={idx} className="rounded-xl bg-amber-50 p-3 text-xs text-amber-950">
-                          <p className="font-bold">
-                            {rec.from_zone} → {rec.to_zone} ({rec.priority})
-                          </p>
-                          <p className="mt-0.5 text-[11px]">{rec.reason}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className="rounded-2xl border border-slate-200 bg-white p-5">
-                  <h2 className="mb-3 text-sm font-bold text-slate-900">
-                    Índice de Congestionamento e Espera por Zona
-                  </h2>
-                  <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
-                    {intelligence.zones.map((z) => (
-                      <div key={z.zone} className="flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 text-xs">
-                        <div>
-                          <p className="font-bold text-slate-900">{z.zone}</p>
-                          <p className="text-[11px] text-slate-500">
-                            Espera est.: ~{z.estimated_wait_min} min • Não atend.: {z.unmet_rate_pct}%
-                          </p>
-                        </div>
-                        <span className="font-mono-code rounded-lg bg-slate-900 px-2.5 py-1 text-[11px] font-bold text-amber-300">
-                          Trânsito {z.congestion_index}x
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 3: DRIVERS VERIFICATION */}
-        {tab === 'drivers' && (
-          <div className="rounded-2xl border border-slate-200 bg-white p-5">
-            <h2 className="mb-4 text-base font-bold text-slate-900">
-              Gestão e Validação Documental de Motoristas
+        {/* TAB 2: OPERATIONAL MAP */}
+        {tab === 'map' && (
+          <div className="rounded-2xl border border-slate-200 bg-white p-4">
+            <h2 className="mb-3 text-sm font-bold text-slate-900">
+              Mapa Operacional de Procura e Oferta em Luanda
             </h2>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead>
-                  <tr className="border-b border-slate-200 text-slate-500">
-                    <th className="py-2.5 pr-4">Motorista</th>
-                    <th className="py-2.5 pr-4">Documentos (Carta / BI)</th>
-                    <th className="py-2.5 pr-4">Veículo</th>
-                    <th className="py-2.5 pr-4">Estado</th>
-                    <th className="py-2.5 text-right">Ações</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {drivers.map((d) => (
-                    <tr key={d.id}>
-                      <td className="py-3 pr-4">
-                        <p className="font-bold text-slate-900">{d.full_name}</p>
-                        <p className="text-slate-500">
-                          {d.phone} • ★ {d.rating_avg.toFixed(2)} ({d.total_trips} viagens)
-                        </p>
-                      </td>
-                      <td className="py-3 pr-4 font-mono-code text-[11px] text-slate-700">
-                        <div>Carta: {d.license_number}</div>
-                        <div>BI: {d.national_id}</div>
-                      </td>
-                      <td className="py-3 pr-4">
-                        {d.vehicle ? (
-                          <div>
-                            <p className="font-semibold text-slate-800">
-                              {d.vehicle.make} {d.vehicle.model} ({d.vehicle.capacity} lug.)
-                            </p>
-                            <p className="font-mono-code text-[11px] text-slate-500">
-                              {d.vehicle.license_plate} • {d.current_zone ?? '—'}
-                            </p>
-                          </div>
-                        ) : (
-                          '—'
-                        )}
-                      </td>
-                      <td className="py-3 pr-4">
-                        <span
-                          className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
-                            d.verification_status === 'APPROVED'
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : d.verification_status === 'PENDING'
-                                ? 'bg-amber-100 text-amber-800'
-                                : 'bg-red-100 text-red-700'
-                          }`}
-                        >
-                          {d.verification_status}
-                        </span>
-                        <span className="ml-2 text-[11px] text-slate-500">({d.operational_status})</span>
-                      </td>
-                      <td className="py-3 text-right">
-                        <div className="inline-flex gap-1.5">
-                          {d.verification_status !== 'APPROVED' && (
-                            <button
-                              type="button"
-                              disabled={busy}
-                              onClick={() => handleVerifyDriver(d.id, 'APPROVED')}
-                              className="inline-flex items-center gap-1 rounded-lg bg-emerald-700 px-2.5 py-1.5 text-[11px] font-bold text-white hover:bg-emerald-800"
-                            >
-                              <CheckCircle2 className="h-3.5 w-3.5" /> Aprovar
-                            </button>
-                          )}
-                          {d.verification_status !== 'SUSPENDED' && (
-                            <button
-                              type="button"
-                              disabled={busy}
-                              onClick={() => handleVerifyDriver(d.id, 'SUSPENDED')}
-                              className="inline-flex items-center gap-1 rounded-lg bg-red-50 px-2.5 py-1.5 text-[11px] font-bold text-red-700 hover:bg-red-100"
-                            >
-                              <Ban className="h-3.5 w-3.5" /> Suspender
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <LuandaMap heightClass="h-[460px]" zoom={12} markers={mapMarkers} demandCircles={demandCircles} />
           </div>
         )}
 
-        {/* TAB 4: PREPAID QR & NFC CARDS */}
-        {tab === 'cards' && cardsData && (
+        {/* TAB 3: FIELD OBSERVATIONS */}
+        {tab === 'field' && (
           <div className="grid gap-5 lg:grid-cols-12">
-            <div className="space-y-4 lg:col-span-4">
-              <form onSubmit={handleTopup} className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5">
-                <div className="flex items-center gap-2">
-                  <PlusCircle className="h-5 w-5 text-emerald-700" />
-                  <h2 className="text-sm font-bold text-slate-900">Carregamento Administrativo (AOA)</h2>
-                </div>
+            <form
+              onSubmit={handleRecordObservation}
+              className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5 lg:col-span-5"
+            >
+              <h2 className="text-sm font-bold text-slate-900">
+                Registar Observação Presencial em Paragem
+              </h2>
+              <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-700">Cartão</label>
+                  <label className="mb-1 block text-xs font-semibold text-slate-600">Paragem / Origem</label>
                   <select
-                    value={topupCard}
-                    onChange={(e) => setTopupCard(e.target.value)}
-                    className="font-mono-code w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold"
+                    value={obsForm.origin_zone}
+                    onChange={(e) => setObsForm({ ...obsForm, origin_zone: e.target.value })}
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold"
                   >
-                    {cardsData.cards.map((c) => (
-                      <option key={c.id} value={c.card_code}>
-                        {c.card_code} — {c.passenger_name} ({formatAOA(c.balance_aoa)})
-                      </option>
+                    {geo?.zones.map((z) => (
+                      <option key={z.id} value={z.name}>{z.name}</option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-700">Valor (AOA)</label>
+                  <label className="mb-1 block text-xs font-semibold text-slate-600">Destino da Via</label>
+                  <select
+                    value={obsForm.destination_zone}
+                    onChange={(e) => setObsForm({ ...obsForm, destination_zone: e.target.value })}
+                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold"
+                  >
+                    {geo?.zones.map((z) => (
+                      <option key={z.id} value={z.name}>{z.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-slate-600">Táxis Obs.</label>
                   <input
                     type="number"
-                    min={100}
-                    step={100}
-                    required
-                    value={topupAmount}
-                    onChange={(e) => setTopupAmount(e.target.value)}
+                    min={0}
+                    value={obsForm.observed_taxis_count}
+                    onChange={(e) => setObsForm({ ...obsForm, observed_taxis_count: Number(e.target.value) })}
                     className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm font-bold"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-slate-700">Descrição</label>
+                  <label className="mb-1 block text-xs font-semibold text-slate-600">Pass. à Espera</label>
                   <input
-                    type="text"
-                    value={topupDesc}
-                    onChange={(e) => setTopupDesc(e.target.value)}
-                    className="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs"
+                    type="number"
+                    min={0}
+                    value={obsForm.observed_passengers_count}
+                    onChange={(e) => setObsForm({ ...obsForm, observed_passengers_count: Number(e.target.value) })}
+                    className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-slate-600">Espera (min)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={obsForm.estimated_wait_min}
+                    onChange={(e) => setObsForm({ ...obsForm, estimated_wait_min: Number(e.target.value) })}
+                    className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm font-bold"
+                  />
+                </div>
+              </div>
+
+              <select
+                value={obsForm.road_condition}
+                onChange={(e) => setObsForm({ ...obsForm, road_condition: e.target.value })}
+                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold"
+              >
+                <option value="NORMAL">Condição da Via: Circulação Normal</option>
+                <option value="MODERATE_TRAFFIC">Trânsito Moderado</option>
+                <option value="HEAVY_TRAFFIC">Trânsito Intenso</option>
+                <option value="DISRUPTED">Via Condicionada</option>
+              </select>
+
+              <input
+                type="text"
+                value={obsForm.notes}
+                onChange={(e) => setObsForm({ ...obsForm, notes: e.target.value })}
+                placeholder="Notas operacionais da paragem..."
+                className="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs"
+              />
+
+              <button
+                type="submit"
+                disabled={busy}
+                className="w-full rounded-xl bg-emerald-700 py-2.5 text-xs font-bold text-white hover:bg-emerald-800"
+              >
+                Registar Observação de Campo
+              </button>
+            </form>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 lg:col-span-7">
+              <h2 className="mb-3 text-sm font-bold text-slate-900">Observações Recentes de Procura (Campo)</h2>
+              <div className="divide-y divide-slate-100">
+                {data?.demand_observations.map((o) => (
+                  <div key={o.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5 text-xs">
+                    <div>
+                      <p className="font-bold text-slate-900">
+                        {o.origin_zone} → {o.destination_zone}: {o.observed_passengers_count} pass. à espera
+                      </p>
+                      <p className="text-[11px] text-slate-500">
+                        {formatLuandaTime(o.observed_at)} • {o.validation_status} • {o.freshness_status}
+                        {o.notes ? ` • ${o.notes}` : ''}
+                      </p>
+                    </div>
+                    {user?.role === 'ADMIN' && o.validation_status === 'PENDING' && (
+                      <div className="flex gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleValidationDecision('DEMAND_OBS', o.id, 'VALIDATED')}
+                          className="inline-flex items-center gap-1 rounded-lg bg-emerald-700 px-2.5 py-1 text-[11px] font-bold text-white"
+                        >
+                          <CheckCircle2 className="h-3.5 w-3.5" /> Validar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleValidationDecision('DEMAND_OBS', o.id, 'REJECTED')}
+                          className="inline-flex items-center gap-1 rounded-lg bg-red-50 px-2.5 py-1 text-[11px] font-bold text-red-700"
+                        >
+                          <XCircle className="h-3.5 w-3.5" /> Rejeitar
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 4: DATA QUALITY */}
+        {tab === 'quality' && data && (
+          <div className="rounded-2xl border border-slate-200 bg-white p-5">
+            <h2 className="mb-3 text-sm font-bold text-slate-900">
+              Controlo de Qualidade, Expiração e Detecção de Anomalias
+            </h2>
+            <div className="divide-y divide-slate-100">
+              {data.active_intentions.map((it) => (
+                <div key={it.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5 text-xs">
+                  <div>
+                    <p className="font-bold text-slate-900">
+                      Intenção #{it.id}: {it.origin_zone} → {it.destination_zone} ({it.passenger_count} pass.)
+                    </p>
+                    <p className="text-[11px] text-slate-500">
+                      Estado: {it.status} • Validação: {it.validation_status} • Frescura: {it.freshness_status} (
+                      {it.age_minutes} min)
+                    </p>
+                  </div>
+                  {user?.role === 'ADMIN' && (
+                    <div className="flex gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => handleValidationDecision('INTENTION', it.id, 'VALIDATED')}
+                        className="rounded-lg bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-800"
+                      >
+                        Confirmar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleValidationDecision('INTENTION', it.id, 'FLAGGED_SUSPICIOUS')}
+                        className="rounded-lg bg-red-50 px-2.5 py-1 text-[11px] font-bold text-red-700"
+                      >
+                        Marcar Suspeito
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 5: GEOGRAPHY & STOPS */}
+        {tab === 'geo' && geo && (
+          <div className="grid gap-5 lg:grid-cols-12">
+            {user?.role === 'ADMIN' && (
+              <form
+                onSubmit={handleCreateStop}
+                className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5 lg:col-span-4"
+              >
+                <div className="flex items-center gap-2">
+                  <Plus className="h-4 w-4 text-emerald-700" />
+                  <h2 className="text-sm font-bold text-slate-900">Cadastrar Paragem Real</h2>
+                </div>
+                <select
+                  value={stopForm.zone_id}
+                  onChange={(e) => setStopForm({ ...stopForm, zone_id: Number(e.target.value) })}
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold"
+                >
+                  {geo.zones.map((z) => (
+                    <option key={z.id} value={z.id}>{z.name} ({z.municipality})</option>
+                  ))}
+                </select>
+                <input
+                  required
+                  placeholder="Nome oficial da paragem"
+                  value={stopForm.name}
+                  onChange={(e) => setStopForm({ ...stopForm, name: e.target.value })}
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs"
+                />
+                <input
+                  placeholder="Ponto de referência"
+                  value={stopForm.landmark}
+                  onChange={(e) => setStopForm({ ...stopForm, landmark: e.target.value })}
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs"
+                />
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="number"
+                    step="0.0001"
+                    value={stopForm.latitude}
+                    onChange={(e) => setStopForm({ ...stopForm, latitude: Number(e.target.value) })}
+                    className="rounded-xl border border-slate-300 px-2.5 py-2 text-xs font-mono-code"
+                  />
+                  <input
+                    type="number"
+                    step="0.0001"
+                    value={stopForm.longitude}
+                    onChange={(e) => setStopForm({ ...stopForm, longitude: Number(e.target.value) })}
+                    className="rounded-xl border border-slate-300 px-2.5 py-2 text-xs font-mono-code"
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={busy}
-                  className="w-full rounded-xl bg-emerald-700 py-2.5 text-xs font-bold text-white hover:bg-emerald-800"
+                  className="w-full rounded-xl bg-slate-900 py-2.5 text-xs font-bold text-white"
                 >
-                  Creditar Saldo no Servidor
+                  Guardar Paragem Validada
                 </button>
               </form>
+            )}
 
-              {/* Phase 4: Issue New Card (QR / NFC) */}
-              <form onSubmit={handleIssueCard} className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5">
-                <div className="flex items-center gap-2">
-                  <CreditCard className="h-5 w-5 text-amber-600" />
-                  <h2 className="text-sm font-bold text-slate-900">Emitir Novo Cartão QR / NFC</h2>
-                </div>
-                <select
-                  value={issuePassengerId}
-                  onChange={(e) => setIssuePassengerId(Number(e.target.value))}
-                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold"
-                >
-                  {passengers.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.full_name} ({p.email})
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="number"
-                  min={0}
-                  step={500}
-                  value={issueInitialBalance}
-                  onChange={(e) => setIssueInitialBalance(e.target.value)}
-                  placeholder="Saldo inicial (AOA)"
-                  className="w-full rounded-xl border border-slate-300 px-3 py-2 text-xs"
-                />
-                <input
-                  type="text"
-                  value={issueNfcUid}
-                  onChange={(e) => setIssueNfcUid(e.target.value)}
-                  placeholder="UID NFC opcional (ex: NFC-AO-9910)"
-                  className="font-mono-code w-full rounded-xl border border-slate-300 px-3 py-2 text-xs uppercase"
-                />
-                <button
-                  type="submit"
-                  disabled={busy}
-                  className="w-full rounded-xl bg-slate-900 py-2.5 text-xs font-bold text-white hover:bg-slate-800"
-                >
-                  Emitir Cartão de Mobilidade
-                </button>
-              </form>
-            </div>
-
-            <div className="space-y-4 lg:col-span-8">
-              <div className="rounded-2xl border border-slate-200 bg-white p-5">
-                <h2 className="mb-3 text-sm font-bold text-slate-900">Cartões de Mobilidade Emitidos (QR / NFC)</h2>
-                <div className="divide-y divide-slate-100">
-                  {cardsData.cards.map((c) => (
-                    <div key={c.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-xs">
-                      <div>
-                        <span className="font-mono-code font-extrabold text-slate-900">{c.card_code}</span>{' '}
-                        <span className="text-slate-600">• {c.passenger_name}</span>
-                        <span className="ml-2 rounded-md bg-slate-100 px-2 py-0.5 font-mono-code text-[10px] font-bold text-slate-700">
-                          {c.card_technology}
-                          {c.nfc_uid ? ` (${c.nfc_uid})` : ''}
-                        </span>
-                        <p className="mt-0.5 text-[11px] text-slate-500">
-                          Saldo: <strong className="text-emerald-700">{formatAOA(c.balance_aoa)}</strong> • Estado:{' '}
-                          <strong>{c.status}</strong>
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        {!c.nfc_uid && (
-                          <button
-                            type="button"
-                            disabled={busy}
-                            onClick={() => handleBindNfcQuick(c.card_code)}
-                            className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2.5 py-1.5 text-[11px] font-bold text-slate-700 hover:bg-slate-200"
-                          >
-                            <Wifi className="h-3.5 w-3.5 rotate-90" /> Ativar NFC
-                          </button>
-                        )}
-                        <button
-                          type="button"
-                          disabled={busy}
-                          onClick={() => handleCardStatus(c.card_code, c.status === 'ACTIVE' ? 'BLOCKED' : 'ACTIVE')}
-                          className={`rounded-lg px-3 py-1.5 text-[11px] font-bold transition ${
-                            c.status === 'ACTIVE'
-                              ? 'bg-red-50 text-red-700 hover:bg-red-100'
-                              : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
-                          }`}
-                        >
-                          {c.status === 'ACTIVE' ? 'Bloquear' : 'Desbloquear'}
-                        </button>
-                      </div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 lg:col-span-8">
+              <h2 className="mb-3 text-sm font-bold text-slate-900">
+                Paragens e Vias Registadas em Luanda ({geo.stops.length} paragens • {geo.routes.length} vias)
+              </h2>
+              <div className="divide-y divide-slate-100">
+                {geo.stops.map((s) => (
+                  <div key={s.id} className="flex items-center justify-between py-2.5 text-xs">
+                    <div>
+                      <p className="font-bold text-slate-900">{s.name}</p>
+                      <p className="text-[11px] text-slate-500">
+                        Zona: {s.zone_name} • {s.landmark ?? '—'} • ({s.latitude.toFixed(4)}, {s.longitude.toFixed(4)})
+                      </p>
                     </div>
-                  ))}
+                    <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800">
+                      {s.is_validated ? 'Validada' : 'Pendente'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 6: HISTORICAL REPORTS */}
+        {tab === 'reports' && data && (
+          <div className="space-y-5">
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 text-xs text-emerald-950">
+              {data.analytics.predictive_model_note}
+            </div>
+            <div className="grid gap-5 lg:grid-cols-2">
+              <div className="rounded-2xl border border-slate-200 bg-white p-5">
+                <h2 className="mb-3 text-sm font-bold text-slate-900">Procura por Hora (Africa/Luanda)</h2>
+                <div className="flex h-40 items-end gap-1 border-b border-slate-200 pb-2">
+                  {data.analytics.demand_by_hour.map((h) => {
+                    const pct = Math.max(6, Math.round((h.passengers / maxHour) * 100));
+                    return (
+                      <div key={h.hour} className="flex flex-1 flex-col items-center gap-1">
+                        <div
+                          className={`w-full rounded-t ${h.passengers > 0 ? 'bg-emerald-600' : 'bg-slate-200'}`}
+                          style={{ height: `${h.passengers > 0 ? pct : 6}%` }}
+                          title={`${h.hour}: ${h.passengers}`}
+                        />
+                        <span className="text-[8px] text-slate-400">{h.hour.replace('h', '')}</span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
               <div className="rounded-2xl border border-slate-200 bg-white p-5">
                 <h2 className="mb-3 text-sm font-bold text-slate-900">
-                  Últimas Operações Financeiras (com Reembolso Autorizado)
+                  Procura por Município e Destino
                 </h2>
-                <div className="divide-y divide-slate-100">
-                  {cardsData.recent_transactions.slice(0, 12).map((tx) => (
-                    <div key={tx.id} className="flex flex-wrap items-center justify-between gap-2 py-2.5 text-xs">
-                      <div>
-                        <p className="font-bold text-slate-900">
-                          [{tx.tx_type}] {tx.card_code} — {tx.description}
-                        </p>
-                        <p className="text-[11px] text-slate-500">
-                          {formatLuandaTime(tx.created_at)} • Antes: {formatAOA(tx.balance_before_aoa)} → Depois:{' '}
-                          {formatAOA(tx.balance_after_aoa)}
-                        </p>
+                <div className="grid grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <p className="mb-1.5 font-bold text-slate-500">Municípios</p>
+                    {data.analytics.demand_by_municipality.map((m) => (
+                      <div key={m.name} className="flex justify-between py-1 border-b border-slate-100">
+                        <span>{m.name}</span>
+                        <strong>{m.passengers}</strong>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono-code font-bold text-slate-900">{formatAOA(tx.amount_aoa)}</span>
-                        {tx.tx_type === 'TRIP_DEBIT' && (
-                          <button
-                            type="button"
-                            disabled={busy}
-                            onClick={() => handleRefund(tx.id)}
-                            className="inline-flex items-center gap-1 rounded-lg bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-800 hover:bg-amber-100"
-                          >
-                            <RotateCcw className="h-3 w-3" /> Reembolsar
-                          </button>
-                        )}
+                    ))}
+                  </div>
+                  <div>
+                    <p className="mb-1.5 font-bold text-slate-500">Destinos</p>
+                    {data.analytics.demand_by_destination.map((d) => (
+                      <div key={d.name} className="flex justify-between py-1 border-b border-slate-100">
+                        <span>{d.name}</span>
+                        <strong>{d.passengers}</strong>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* TAB 5: TRIPS WITH ADVANCED DATE & STATUS FILTERS */}
-        {tab === 'trips' && (
-          <div className="rounded-2xl border border-slate-200 bg-white p-5">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-              <h2 className="text-base font-bold text-slate-900">Registo Operacional de Viagens</h2>
-              <div className="flex flex-wrap items-center gap-2 text-xs">
-                <input
-                  type="date"
-                  value={dateFrom}
-                  onChange={(e) => setDateFrom(e.target.value)}
-                  className="rounded-xl border border-slate-300 bg-white px-2.5 py-1.5 font-medium"
-                />
-                <span className="text-slate-400">a</span>
-                <input
-                  type="date"
-                  value={dateTo}
-                  onChange={(e) => setDateTo(e.target.value)}
-                  className="rounded-xl border border-slate-300 bg-white px-2.5 py-1.5 font-medium"
-                />
-                <select
-                  value={tripStatusFilter}
-                  onChange={(e) => setTripStatusFilter(e.target.value)}
-                  className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 font-semibold"
-                >
-                  <option value="">Todos os Estados</option>
-                  <option value="DRIVER_EN_ROUTE">A caminho</option>
-                  <option value="DRIVER_ARRIVED">No local</option>
-                  <option value="IN_PROGRESS">Em andamento</option>
-                  <option value="COMPLETED">Concluídas</option>
-                </select>
-              </div>
+        {/* TAB 7: CONFIGURABLE THRESHOLDS */}
+        {tab === 'config' && data && (
+          <form
+            onSubmit={handleSaveConfig}
+            className="mx-auto max-w-3xl space-y-4 rounded-2xl border border-slate-200 bg-white p-6"
+          >
+            <h2 className="text-base font-bold text-slate-900">
+              Limites Configuráveis de Procura, Oferta e Expiração
+            </h2>
+            <div className="space-y-3">
+              {data.configs.map((c) => (
+                <div key={c.key} className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3 text-xs">
+                  <div>
+                    <p className="font-mono-code font-bold text-slate-900">{c.key}</p>
+                    <p className="text-slate-500">{c.description}</p>
+                  </div>
+                  <input
+                    type="text"
+                    value={configDraft[c.key] ?? c.value}
+                    onChange={(e) => setConfigDraft({ ...configDraft, [c.key]: e.target.value })}
+                    className="w-24 rounded-xl border border-slate-300 px-3 py-1.5 text-center font-mono-code font-bold"
+                  />
+                </div>
+              ))}
             </div>
-            {trips.length === 0 ? (
-              <p className="text-xs text-slate-500">Sem viagens para os filtros selecionados.</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead>
-                    <tr className="border-b border-slate-200 text-slate-500">
-                      <th className="py-2 pr-3">#</th>
-                      <th className="py-2 pr-3">Rota</th>
-                      <th className="py-2 pr-3">Motorista / Veículo</th>
-                      <th className="py-2 pr-3">Estado</th>
-                      <th className="py-2 pr-3">Validado</th>
-                      <th className="py-2 text-right">Comissão</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {trips.map((t) => (
-                      <tr key={t.id}>
-                        <td className="py-2.5 pr-3 font-mono-code font-bold">#{t.id}</td>
-                        <td className="py-2.5 pr-3">
-                          <p className="font-bold text-slate-900">
-                            {t.request?.pickup_zone} → {t.request?.dropoff_zone}
-                          </p>
-                          <p className="text-[11px] text-slate-500">
-                            {t.request?.passenger_name} ({t.request?.request_type} • {t.request?.passenger_count} pass.)
-                          </p>
-                        </td>
-                        <td className="py-2.5 pr-3">
-                          <p className="font-semibold">{t.driver?.full_name}</p>
-                          <p className="text-[11px] text-slate-500">
-                            {t.vehicle?.make} {t.vehicle?.model} ({t.vehicle?.license_plate})
-                          </p>
-                        </td>
-                        <td className="py-2.5 pr-3">
-                          <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-bold">
-                            {t.status}
-                          </span>
-                        </td>
-                        <td className="py-2.5 pr-3 font-bold text-emerald-700">
-                          {formatAOA(t.paid_total_aoa)} / {formatAOA(t.total_fare_aoa)}
-                        </td>
-                        <td className="py-2.5 text-right font-semibold text-amber-700">
-                          {t.commission ? formatAOA(t.commission.platform_fee_aoa) : '—'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+            {user?.role === 'ADMIN' && (
+              <button
+                type="submit"
+                disabled={busy}
+                className="rounded-xl bg-emerald-700 px-5 py-2.5 text-xs font-bold text-white hover:bg-emerald-800"
+              >
+                Guardar Limites Configuráveis
+              </button>
             )}
-          </div>
-        )}
-
-        {/* TAB 6: AUDIT LOGS & PHASE 4 EXTERNAL INTEGRATIONS REGISTRY */}
-        {tab === 'audit' && (
-          <div className="grid gap-5 lg:grid-cols-12">
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 lg:col-span-5">
-              <div className="mb-3 flex items-center gap-2">
-                <Link2 className="h-5 w-5 text-amber-600" />
-                <h2 className="text-sm font-bold text-slate-900">
-                  Arquitetura de Integrações & Parceiros (Fase 4)
-                </h2>
-              </div>
-              <div className="space-y-2.5">
-                {integrations.map((ad) => (
-                  <div key={ad.provider_code} className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-bold text-slate-900">{ad.display_name}</span>
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold ${
-                          ad.status.startsWith('ACTIVE')
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : ad.status.startsWith('READY')
-                              ? 'bg-amber-100 text-amber-800'
-                              : 'bg-slate-200 text-slate-700'
-                        }`}
-                      >
-                        {ad.status}
-                      </span>
-                    </div>
-                    <p className="mt-1 text-[11px] text-slate-600">{ad.notes}</p>
-                    <p className="mt-1 font-mono-code text-[10px] text-slate-400">
-                      Custo: {ad.cost_tier} • QR: {ad.supports_qr ? 'Sim' : 'Não'} • NFC:{' '}
-                      {ad.supports_nfc ? 'Sim' : 'Não'}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 lg:col-span-7">
-              <div className="mb-3 flex items-center gap-2">
-                <ShieldCheck className="h-5 w-5 text-emerald-700" />
-                <h2 className="text-sm font-bold text-slate-900">Registo Imutável de Auditoria (Audit Logs)</h2>
-              </div>
-              <div className="max-h-[480px] divide-y divide-slate-100 overflow-y-auto pr-1">
-                {auditLogs.map((log) => (
-                  <div key={log.id} className="py-2.5 text-xs">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="font-mono-code font-bold text-slate-900">
-                        {log.action} • {log.entity_type} #{log.entity_id ?? '—'}
-                      </span>
-                      <span className="text-[11px] text-slate-400">{formatLuandaTime(log.created_at)}</span>
-                    </div>
-                    <p className="mt-0.5 font-mono-code text-[11px] text-slate-500">{log.details_json}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+          </form>
         )}
       </main>
     </div>

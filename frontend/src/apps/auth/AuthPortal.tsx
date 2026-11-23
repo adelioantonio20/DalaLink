@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import {
   ArrowRight,
-  Building2,
   Car,
-  CreditCard,
+  ClipboardCheck,
+  Clock,
   LayoutDashboard,
   MapPin,
   Navigation,
@@ -14,44 +14,36 @@ import { useAuth } from '../../contexts/AuthContext';
 
 const PORTAL_CARDS = [
   {
-    title: 'Aplicação do Passageiro',
-    subtitle: 'Mateus Domingos • Cartão MOB-000001 (10.000 AOA)',
-    detail: 'Solicite Gamek → Aeroporto, adicione grupos e acompanhe no mapa.',
+    title: 'Ambiente do Passageiro',
+    subtitle: 'Saiba como está a sua via antes de sair de casa.',
+    detail: 'Consulte Gamek → Maianga, compare paragens próximas, declare intenção de viajar e confirme presença.',
     email: 'passageiro@dalalink.ao',
     icon: UserIcon,
     accent: 'bg-emerald-700',
   },
   {
-    title: 'Aplicação do Motorista',
-    subtitle: 'Carlos Eduardo • Hyundai i10 (LD-42-18-AB)',
-    detail: 'Receba corridas com alerta sonoro, valide QR e acompanhe receitas.',
+    title: 'Ambiente do Motorista',
+    subtitle: 'Saiba onde existe procura antes de escolher a sua próxima via.',
+    detail: 'Consulte vias e destinos mais procurados, mapa de calor de procura e declare a sua disponibilidade.',
     email: 'motorista@dalalink.ao',
     icon: Car,
     accent: 'bg-slate-900',
   },
   {
-    title: 'Portal Empresarial (B2B)',
-    subtitle: 'Atlântico Energia • Subscrição 100 colaboradores',
-    detail: 'Gira colaboradores, rotas corporativas e agrupamento das 17h00.',
-    email: 'empresa@dalalink.ao',
-    icon: Building2,
+    title: 'Recolha de Campo (Operacional)',
+    subtitle: 'Observação presencial nas paragens de Luanda.',
+    detail: 'Registe táxis observados, passageiros à espera e estado do trânsito em tempo real.',
+    email: 'campo@dalalink.ao',
+    icon: ClipboardCheck,
     accent: 'bg-amber-700',
   },
   {
     title: 'Painel Administrativo',
-    subtitle: 'Torre de Controlo Operacional • Luanda',
-    detail: 'KPIs ao vivo, mapa & heatmap de procura, motoristas, cartões QR/NFC e integrações.',
+    subtitle: 'Gestão geográfica, qualidade de dados e analítica.',
+    detail: 'Valide observações, configure limites de procura/expiração, gira paragens/vias e consulte históricos.',
     email: 'admin@dalalink.ao',
     icon: LayoutDashboard,
     accent: 'bg-teal-800',
-  },
-  {
-    title: 'Proprietário & Gestão de Frotas',
-    subtitle: 'Frota DalaLink Luanda • Hyundai i10 + HiAce + Picanto',
-    detail: 'Acompanhe receitas por viatura, localização ao vivo e atribuição de motoristas.',
-    email: 'frota@dalalink.ao',
-    icon: Car,
-    accent: 'bg-emerald-900',
   },
 ];
 
@@ -62,13 +54,9 @@ export const AuthPortal: React.FC = () => {
   const [password, setPassword] = useState('dalalink123');
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('+244923');
-  const [role, setRole] = useState<'PASSENGER' | 'DRIVER' | 'COMPANY_ADMIN'>('PASSENGER');
+  const [role, setRole] = useState<'PASSENGER' | 'DRIVER'>('PASSENGER');
   const [licenseNumber, setLicenseNumber] = useState('');
   const [nationalId, setNationalId] = useState('');
-  const [vehicleMake, setVehicleMake] = useState('Hyundai');
-  const [vehicleModel, setVehicleModel] = useState('i10');
-  const [vehiclePlate, setVehiclePlate] = useState('');
-  const [companyName, setCompanyName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -78,7 +66,7 @@ export const AuthPortal: React.FC = () => {
     try {
       await login(demoEmail, 'dalalink123');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao iniciar sessão de demonstração.');
+      setError(err instanceof Error ? err.message : 'Erro ao iniciar sessão.');
     } finally {
       setSubmitting(false);
     }
@@ -100,10 +88,6 @@ export const AuthPortal: React.FC = () => {
           role,
           license_number: role === 'DRIVER' ? licenseNumber : undefined,
           national_id: role === 'DRIVER' ? nationalId : undefined,
-          vehicle_make: role === 'DRIVER' ? vehicleMake : undefined,
-          vehicle_model: role === 'DRIVER' ? vehicleModel : undefined,
-          vehicle_plate: role === 'DRIVER' ? vehiclePlate : undefined,
-          company_name: role === 'COMPANY_ADMIN' ? companyName : undefined,
         });
       }
     } catch (err) {
@@ -116,7 +100,6 @@ export const AuthPortal: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="mx-auto max-w-6xl px-4 py-8 sm:py-12">
-        {/* Header Brand */}
         <div className="mb-10 flex flex-col justify-between gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-end">
           <div>
             <div className="mb-3 inline-flex items-center gap-2.5">
@@ -128,39 +111,38 @@ export const AuthPortal: React.FC = () => {
                   DalaLink
                 </h1>
                 <p className="text-xs font-semibold uppercase tracking-widest text-emerald-700">
-                  Mobilidade Urbana de Luanda • Angola
+                  Inteligência e Intermediação de Informação • Luanda
                 </p>
               </div>
             </div>
             <p className="max-w-2xl text-sm text-slate-600">
-              Infraestrutura digital de intermediação entre passageiros, taxistas, frotas e empresas em
-              Luanda — com cartões pré-pagos QR validados no servidor, acompanhamento em tempo real e
-              inteligência de procura.
+              Mais informação, melhores decisões e uma distribuição mais eficiente entre passageiros e
+              táxis em Luanda — com dados geograficamente contextualizados, origem transparente e controlo
+              de actualidade em tempo real.
             </p>
           </div>
-          <div className="flex flex-wrap gap-3 text-xs font-medium text-slate-600">
+          <div className="flex flex-wrap gap-2.5 text-xs font-medium text-slate-600">
             <span className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 shadow-xs ring-1 ring-slate-200">
-              <MapPin className="h-3.5 w-3.5 text-emerald-700" /> Africa/Luanda
+              <MapPin className="h-3.5 w-3.5 text-emerald-700" /> Luanda, Angola
             </span>
             <span className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 shadow-xs ring-1 ring-slate-200">
-              <CreditCard className="h-3.5 w-3.5 text-amber-600" /> Kwanza (AOA)
+              <Clock className="h-3.5 w-3.5 text-amber-600" /> Validade Temporal
             </span>
             <span className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 shadow-xs ring-1 ring-slate-200">
-              <ShieldCheck className="h-3.5 w-3.5 text-emerald-700" /> Bilhética QR Segura
+              <ShieldCheck className="h-3.5 w-3.5 text-emerald-700" /> Dados Auditáveis
             </span>
           </div>
         </div>
 
         <div className="grid gap-8 lg:grid-cols-12">
-          {/* 4 Environments Quick Launch */}
           <section className="space-y-4 lg:col-span-7">
             <div>
               <h2 className="text-lg font-bold text-slate-900">
-                Acesso Direto aos 4 Ambientes Operacionais (Demo Luanda)
+                Aceder aos Ambientes da Plataforma
               </h2>
               <p className="mt-1 text-xs text-slate-500">
-                Cenário piloto pronto a testar: <strong>Gamek → Aeroporto Internacional 4 de Fevereiro</strong>{' '}
-                (1.000 AOA) com o veículo <strong>Hyundai i10</strong> e cartão <strong>MOB-000001</strong>.
+                Cenário em destaque: consultar disponibilidade na via <strong>Gamek → Maianga</strong>,
+                comparar com a paragem alternativa <strong>Rocha Gamek</strong> e validar observações de campo.
               </p>
             </div>
 
@@ -197,14 +179,13 @@ export const AuthPortal: React.FC = () => {
             </div>
 
             <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 text-xs text-emerald-950">
-              <strong>Dica de validação ponta-a-ponta:</strong> Pode abrir a plataforma em dois separadores
-              (um como <em>Passageiro</em> e outro como <em>Motorista</em>) ou usar o botão{' '}
-              <strong>Trocar Ambiente</strong> no topo para acompanhar o pedido, a aceitação, a leitura QR e o
-              registo final no Painel Administrativo em tempo real.
+              <strong>Transparência dos dados:</strong> A plataforma distingue sempre informação{' '}
+              <em>Declarada por utilizadores</em>, <em>Confirmada na paragem</em> e{' '}
+              <em>Observada em campo</em>, sinalizando dados desactualizados e exibindo claramente quando
+              existe informação insuficiente.
             </div>
           </section>
 
-          {/* Real Auth / Registration Form */}
           <section className="lg:col-span-5">
             <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <div className="mb-5 grid grid-cols-2 rounded-xl bg-slate-100 p-1">
@@ -247,12 +228,11 @@ export const AuthPortal: React.FC = () => {
                       <label className="mb-1 block text-xs font-semibold text-slate-700">Perfil</label>
                       <select
                         value={role}
-                        onChange={(e) => setRole(e.target.value as 'PASSENGER' | 'DRIVER' | 'COMPANY_ADMIN')}
+                        onChange={(e) => setRole(e.target.value as 'PASSENGER' | 'DRIVER')}
                         className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-emerald-600 focus:outline-none"
                       >
-                        <option value="PASSENGER">Passageiro (emite cartão QR automático)</option>
-                        <option value="DRIVER">Motorista / Taxista (validação documental)</option>
-                        <option value="COMPANY_ADMIN">Empresa (Transporte Corporativo)</option>
+                        <option value="PASSENGER">Passageiro</option>
+                        <option value="DRIVER">Motorista / Taxista</option>
                       </select>
                     </div>
                     <div>
@@ -263,7 +243,7 @@ export const AuthPortal: React.FC = () => {
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
                         placeholder="Ex.: António Manuel"
-                        className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-600 focus:outline-none"
+                        className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm"
                       />
                     </div>
                     <div>
@@ -274,7 +254,7 @@ export const AuthPortal: React.FC = () => {
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         placeholder="+244923000999"
-                        className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-600 focus:outline-none"
+                        className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm"
                       />
                     </div>
                   </>
@@ -283,103 +263,52 @@ export const AuthPortal: React.FC = () => {
                 <div>
                   <label className="mb-1 block text-xs font-semibold text-slate-700">Email</label>
                   <input
-                    id="auth-email"
                     type="email"
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="nome@dalalink.ao"
-                    className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-600 focus:outline-none"
+                    className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm"
                   />
                 </div>
 
                 <div>
                   <label className="mb-1 block text-xs font-semibold text-slate-700">Palavra-passe</label>
                   <input
-                    id="auth-password"
                     type="password"
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:border-emerald-600 focus:outline-none"
+                    className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm"
                   />
                 </div>
 
                 {mode === 'register' && role === 'DRIVER' && (
-                  <div className="space-y-3 rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                      Dados Documentais e Veículo
-                    </p>
-                    <div className="grid grid-cols-2 gap-2">
-                      <input
-                        type="text"
-                        required
-                        value={licenseNumber}
-                        onChange={(e) => setLicenseNumber(e.target.value)}
-                        placeholder="Carta Condução"
-                        className="rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs"
-                      />
-                      <input
-                        type="text"
-                        required
-                        value={nationalId}
-                        onChange={(e) => setNationalId(e.target.value)}
-                        placeholder="Nº Bilhete Identidade"
-                        className="rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs"
-                      />
-                    </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      <input
-                        type="text"
-                        value={vehicleMake}
-                        onChange={(e) => setVehicleMake(e.target.value)}
-                        placeholder="Marca"
-                        className="rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs"
-                      />
-                      <input
-                        type="text"
-                        value={vehicleModel}
-                        onChange={(e) => setVehicleModel(e.target.value)}
-                        placeholder="Modelo"
-                        className="rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs"
-                      />
-                      <input
-                        type="text"
-                        value={vehiclePlate}
-                        onChange={(e) => setVehiclePlate(e.target.value)}
-                        placeholder="Matrícula LD"
-                        className="rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-xs"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {mode === 'register' && role === 'COMPANY_ADMIN' && (
-                  <div>
-                    <label className="mb-1 block text-xs font-semibold text-slate-700">Nome da Empresa</label>
+                  <div className="grid grid-cols-2 gap-2">
                     <input
                       type="text"
                       required
-                      value={companyName}
-                      onChange={(e) => setCompanyName(e.target.value)}
-                      placeholder="Ex.: Luanda Tech, Lda."
-                      className="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm"
+                      value={licenseNumber}
+                      onChange={(e) => setLicenseNumber(e.target.value)}
+                      placeholder="Carta Condução"
+                      className="rounded-xl border border-slate-300 px-3 py-2 text-xs"
+                    />
+                    <input
+                      type="text"
+                      required
+                      value={nationalId}
+                      onChange={(e) => setNationalId(e.target.value)}
+                      placeholder="Nº Bilhete Identidade"
+                      className="rounded-xl border border-slate-300 px-3 py-2 text-xs"
                     />
                   </div>
                 )}
 
                 <button
-                  id="auth-submit-btn"
                   type="submit"
                   disabled={submitting}
                   className="w-full rounded-xl bg-emerald-700 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-800 disabled:opacity-50"
                 >
-                  {submitting
-                    ? 'A processar...'
-                    : mode === 'login'
-                      ? 'Entrar na Plataforma'
-                      : 'Registar e Entrar'}
+                  {submitting ? 'A processar...' : mode === 'login' ? 'Entrar' : 'Registar e Entrar'}
                 </button>
               </form>
             </div>

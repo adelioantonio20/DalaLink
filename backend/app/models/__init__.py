@@ -9,6 +9,24 @@ from app.models.corporate import (
 from app.models.finance import CardTransaction, Commission, Tariff, TransportCard, Wallet
 from app.models.fleet import DriverAvailability, Vehicle, VehicleLocation
 from app.models.identity import Driver, Passenger, User, VehicleOwner
+from app.models.intelligence import (
+    DataValidation,
+    DemandObservation,
+    DriverReport,
+    GroupIntention,
+    LocationUpdate,
+    MobilityIndicator,
+    Municipality,
+    Neighborhood,
+    PassengerConfirmation,
+    PlatformConfig,
+    RouteDestination,
+    SupplyObservation,
+    TaxiStop,
+    TransportIntention,
+    TransportRoute,
+    TransportZone,
+)
 from app.models.mobility import (
     AuditLog,
     GroupPassenger,
@@ -47,4 +65,21 @@ __all__ = [
     "Notification",
     "Rating",
     "AuditLog",
+    # New Mobility Information & Intelligence entities (Section 11)
+    "Municipality",
+    "Neighborhood",
+    "TransportZone",
+    "TaxiStop",
+    "TransportRoute",
+    "RouteDestination",
+    "TransportIntention",
+    "GroupIntention",
+    "PassengerConfirmation",
+    "DriverReport",
+    "SupplyObservation",
+    "DemandObservation",
+    "MobilityIndicator",
+    "LocationUpdate",
+    "DataValidation",
+    "PlatformConfig",
 ]

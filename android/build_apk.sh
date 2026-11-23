@@ -9,7 +9,7 @@ ANDROID_JAR="${SDK_ROOT}/platforms/android-35/android.jar"
 SRC_DIR="${SCRIPT_DIR}/app/src/main"
 BUILD_DIR="${SCRIPT_DIR}/build"
 KEYSTORE="${SCRIPT_DIR}/dalalink-release.keystore"
-OUT_APK="${SCRIPT_DIR}/DalaLink-Luanda-v1.0.apk"
+OUT_APK="${SCRIPT_DIR}/DalaLink-Luanda-v2.0.apk"
 
 rm -rf "${BUILD_DIR}"
 mkdir -p "${BUILD_DIR}/compiled_res" "${BUILD_DIR}/gen" "${BUILD_DIR}/obj" "${BUILD_DIR}/dex"

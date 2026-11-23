@@ -50,13 +50,14 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)):
         passenger = Passenger(user_id=user.id, default_zone="Gamek")
         db.add(passenger)
         db.flush()
-        # Issue a prepaid QR mobility card automatically (starting balance 0 AOA until admin top-up)
-        issue_card_for_passenger(
-            db,
-            passenger=passenger,
-            initial_balance_aoa=Decimal("0.00"),
-            actor_user_id=user.id,
-        )
+        from app.core.config import settings
+        if settings.ENABLE_LEGACY_FINANCE_MODULES:
+            issue_card_for_passenger(
+                db,
+                passenger=passenger,
+                initial_balance_aoa=Decimal("0.00"),
+                actor_user_id=user.id,
+            )
     elif role == "DRIVER":
         if not payload.license_number or not payload.national_id:
             raise HTTPException(
@@ -160,43 +161,31 @@ def get_me(user: User = Depends(get_current_user), db: Session = Depends(get_db)
 
 @router.get("/demo-accounts")
 def list_demo_accounts():
-    """Return quick-access demo profiles for testing all 4 environments in Luanda."""
+    """Return quick-access demo profiles for the Mobility Information & Intelligence MVP."""
     return {
         "default_password": "dalalink123",
         "accounts": [
             {
                 "role": "PASSENGER",
-                "label": "Passageiro — Mateus Domingos (Cartão MOB-000001 • 10.000 AOA)",
+                "label": "Passageiro — Mateus Domingos (Consultar vias antes de sair de casa)",
                 "email": "passageiro@dalalink.ao",
-                "environment": "Aplicação do Passageiro",
+                "environment": "Ambiente do Passageiro",
             },
             {
                 "role": "DRIVER",
-                "label": "Motorista — Carlos Eduardo (Hyundai i10 • Gamek)",
+                "label": "Motorista — Carlos Eduardo (Procura por via e destino em Luanda)",
                 "email": "motorista@dalalink.ao",
-                "environment": "Aplicação do Motorista",
+                "environment": "Ambiente do Motorista",
             },
             {
-                "role": "DRIVER",
-                "label": "Motorista 2 — Fernando Quiosa (Toyota HiAce 12 lug. • Maianga)",
-                "email": "motorista2@dalalink.ao",
-                "environment": "Aplicação do Motorista",
-            },
-            {
-                "role": "COMPANY_ADMIN",
-                "label": "Empresa — Sofia Mendes (Atlântico Energia • Talatona)",
-                "email": "empresa@dalalink.ao",
-                "environment": "Portal Empresarial",
-            },
-            {
-                "role": "OWNER",
-                "label": "Proprietário / Frota — Frota DalaLink Luanda (3 viaturas)",
-                "email": "frota@dalalink.ao",
-                "environment": "Portal do Proprietário & Frotas",
+                "role": "FIELD_COLLECTOR",
+                "label": "Recolha de Campo — Nelson Quissanga (Observação presencial nas paragens)",
+                "email": "campo@dalalink.ao",
+                "environment": "Recolha de Campo",
             },
             {
                 "role": "ADMIN",
-                "label": "Administração — Adélio António (Torre de Controlo Luanda)",
+                "label": "Administração — Adélio António (Gestão geográfica, qualidade e analítica)",
                 "email": "admin@dalalink.ao",
                 "environment": "Painel Administrativo",
             },

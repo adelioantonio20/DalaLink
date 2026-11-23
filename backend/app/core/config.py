@@ -12,11 +12,15 @@ def now_luanda() -> datetime:
 
 
 class Settings(BaseSettings):
-    APP_NAME: str = "DalaLink — Plataforma de Mobilidade Urbana de Luanda"
-    APP_VERSION: str = "1.0.0-mvp"
+    APP_NAME: str = "DalaLink — Inteligência de Mobilidade Urbana de Luanda"
+    APP_VERSION: str = "2.0.0-info-mvp"
     ENVIRONMENT: str = "development"
     TIMEZONE: str = "Africa/Luanda"
     CURRENCY: str = "AOA"
+
+    # Strategic MVP Scope (Section 3 & 14): Financial/wallet/payment modules disabled in active MVP,
+    # preserved in codebase for future phases without deleting code or tables.
+    ENABLE_LEGACY_FINANCE_MODULES: bool = False
 
     # Supports PostgreSQL+PostGIS in production (e.g. postgresql+psycopg2://...)
     # Defaults to local SQLite for zero-config MVP dev/test without external costs.
@@ -27,7 +31,7 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24
 
-    # Operational parameters
+    # Operational parameters (legacy)
     MATCHING_OFFER_TIMEOUT_SECONDS: int = 45
     PLATFORM_COMMISSION_RATE: float = 0.15  # 15%
     CORS_ORIGINS: str = "*"

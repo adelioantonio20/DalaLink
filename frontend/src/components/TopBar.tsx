@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
-  Building2,
   Car,
+  ClipboardCheck,
   LayoutDashboard,
   LogOut,
   Navigation,
@@ -16,12 +16,10 @@ interface TopBarProps {
 }
 
 const DEMO_SWITCH_ACCOUNTS = [
-  { label: 'Passageiro (MOB-000001)', email: 'passageiro@dalalink.ao', icon: UserIcon },
-  { label: 'Motorista (Hyundai i10)', email: 'motorista@dalalink.ao', icon: Car },
-  { label: 'Motorista 2 (HiAce)', email: 'motorista2@dalalink.ao', icon: Car },
-  { label: 'Empresa (Atlântico)', email: 'empresa@dalalink.ao', icon: Building2 },
-  { label: 'Proprietário / Frota', email: 'frota@dalalink.ao', icon: Car },
-  { label: 'Administração Luanda', email: 'admin@dalalink.ao', icon: LayoutDashboard },
+  { label: 'Passageiro (Consultar Vias)', email: 'passageiro@dalalink.ao', icon: UserIcon },
+  { label: 'Motorista (Mapa de Procura)', email: 'motorista@dalalink.ao', icon: Car },
+  { label: 'Recolha de Campo (Paragens)', email: 'campo@dalalink.ao', icon: ClipboardCheck },
+  { label: 'Administração (Controlo & Dados)', email: 'admin@dalalink.ao', icon: LayoutDashboard },
 ];
 
 export const TopBar: React.FC<TopBarProps> = ({ dark = false }) => {
@@ -43,7 +41,7 @@ export const TopBar: React.FC<TopBarProps> = ({ dark = false }) => {
     <header
       className={`sticky top-0 z-30 border-b backdrop-blur-md ${
         dark
-          ? 'border-slate-800 bg-slate-950/90 text-white'
+          ? 'border-slate-800 bg-slate-950/95 text-white'
           : 'border-slate-200 bg-white/95 text-slate-900'
       }`}
     >
@@ -60,7 +58,7 @@ export const TopBar: React.FC<TopBarProps> = ({ dark = false }) => {
                   dark ? 'bg-slate-800 text-emerald-400' : 'bg-emerald-50 text-emerald-800'
                 }`}
               >
-                Luanda
+                Inteligência • Luanda
               </span>
             </div>
             <p className={`text-[11px] ${dark ? 'text-slate-400' : 'text-slate-500'}`}>
@@ -82,7 +80,7 @@ export const TopBar: React.FC<TopBarProps> = ({ dark = false }) => {
             }`}
           >
             <Radio className="h-3.5 w-3.5" />
-            {wsConnected ? 'Tempo Real' : 'A sincronizar'}
+            {wsConnected ? 'Actualização Activa' : 'A sincronizar'}
           </div>
 
           <div className="relative">
@@ -96,13 +94,13 @@ export const TopBar: React.FC<TopBarProps> = ({ dark = false }) => {
               }`}
             >
               <Repeat className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Trocar Ambiente</span>
+              <span className="hidden sm:inline">Trocar Perfil</span>
             </button>
 
             {switcherOpen && (
               <div className="absolute right-0 mt-2 w-64 rounded-2xl border border-slate-200 bg-white p-2 text-slate-900 shadow-xl">
                 <p className="px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                  Simulação Rápida (4 Ambientes)
+                  Perfis da Plataforma (Luanda)
                 </p>
                 {DEMO_SWITCH_ACCOUNTS.map((acc) => {
                   const Icon = acc.icon;
